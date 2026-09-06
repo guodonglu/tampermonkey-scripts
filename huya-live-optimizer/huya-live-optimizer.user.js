@@ -3,7 +3,7 @@
 // @namespace    https://github.com/guodonglu/tampermonkey-scripts
 // @homepageURL  https://github.com/guodonglu/tampermonkey-scripts/tree/main/huya-live-optimizer
 // @icon         https://www.huya.com/favicon.ico
-// @version      2.0.0
+// @version      2.0.4
 // @description  自动免扫码解锁原画/蓝光等画质限制、智能切换最高/指定画质、自动进入观影模式(网页全屏)、毫秒级跳过片头广告、切台监听与毛玻璃设置面板
 // @author       guodonglu, mks155
 // @match        *://*.huya.com/*
@@ -115,7 +115,22 @@
     qualityItems: '.player-videotype-list li',
     currentQuality: '.player-videotype-cur',
     qualityBox: '.player-videotype, .player-videotype-box',
-    theaterBtn: '#player-fullpage-btn',
+    theaterBtn: '#player-fullpage-btn, .player-fullpage-btn',
+    theaterBtns: [
+      '#player-fullpage-btn',
+      '.player-fullpage-btn',
+      '#player-ctrl-wrap .player-fullpage-btn',
+      '#player-ctrl-wrap [title*="网页全屏"]',
+      '#player-ctrl-wrap [data-player-tip*="网页全屏"]',
+      '[data-player-tip="网页全屏"]',
+      '[title="网页全屏"]'
+    ].join(', '),
+    theaterActiveMarks: [
+      '.player-narrowpage',
+      '#player-ctrl-wrap .player-narrowpage',
+      '[title*="退出网页全屏"]',
+      '[data-player-tip*="退出网页全屏"]'
+    ].join(', '),
     adButtons: [
       '.ab-skip',
       '.ad-tip .skip',
@@ -123,7 +138,6 @@
       '.skip-ad',
       '.video-ad-skip',
       '.player-ad-tip .skip',
-      '.player-ad-tip span',
       '.ad-countdown .skip',
       '.player-ad-close',
       '[class*="skip--"]',
@@ -201,102 +215,141 @@
    * 自动切换画质
    */
   async function applyQuality(signal) {
-    // 1. 等待画质控件加载
-    await waitFor(() => {
-      const items = document.querySelectorAll(SELECTORS.qualityItems);
-      const cur = document.querySelector(SELECTORS.currentQuality);
-      return items.length > 0 && cur;
-    }, config.timeout, '等待画质控件就绪', signal);
+    // 控件出现不代表播放器事件和 jQuery 画质数据已经初始化完成。
+    // 在有限时间内重新读取控件、解锁并重试，兼容加载过程中替换列表。
+    const deadline = Date.now() + config.timeout;
+    let lastClick = -Infinity;
+    let confirmedAt = null;
+    let previousTarget = null;
+    let targetQuality = '';
+    const label = el => (el?.textContent || '').replace(/\s+/g, '').replace(/扫码|解锁|限免|登录/g, '');
 
-    bindDynamicUnlock();
-    unlockQualityRestrictions();
+    while (Date.now() < deadline) {
+      if (signal?.aborted) throw abortError();
+      bindDynamicUnlock();
+      unlockQualityRestrictions();
+      const items = Array.from(document.querySelectorAll(SELECTORS.qualityItems));
+      const current = document.querySelector(SELECTORS.currentQuality);
+      const pref = String(config.preferredQuality || 'highest').trim();
+      const target = pref === 'highest' ? items[0]
+        : items.find(el => label(el) === pref) || items.find(el => label(el).includes(pref)) || items[0];
 
-    const items = Array.from(document.querySelectorAll(SELECTORS.qualityItems));
-    const curEl = document.querySelector(SELECTORS.currentQuality);
-    const curText = curEl ? curEl.textContent.trim() : '';
-
-    // 2. 匹配目标画质
-    let targetEl = null;
-    const pref = (config.preferredQuality || 'highest').trim();
-
-    if (pref === 'highest') {
-      targetEl = items[0];
-    } else {
-      // 优先全匹配
-      targetEl = items.find(el => el.textContent.trim() === pref);
-      // 模糊包含匹配
-      if (!targetEl) {
-        targetEl = items.find(el => el.textContent.trim().includes(pref));
+      if (target && current && label(target)) {
+        if (target !== previousTarget) {
+          previousTarget = target;
+          confirmedAt = null;
+          lastClick = -Infinity;
+        }
+        targetQuality = label(target);
+        if (label(current) === targetQuality) {
+          if (confirmedAt === null) confirmedAt = Date.now();
+          // 避免加载过程短暂显示目标画质，随后又被播放器默认值覆盖。
+          if (Date.now() - confirmedAt >= 1200) {
+            updateBadgeQuality(current.textContent.trim());
+            return '已确认目标画质: ' + targetQuality;
+          }
+        } else {
+          confirmedAt = null;
+          if (Date.now() - lastClick >= 1500) {
+            lastClick = Date.now();
+            try { target.click(); } catch (e) {}
+          }
+        }
+      } else {
+        confirmedAt = null;
       }
-      // 兜底为最高画质
-      if (!targetEl) {
-        targetEl = items[0];
-      }
+      await sleep(Math.min(200, Math.max(0, deadline - Date.now())), signal);
     }
-
-    if (!targetEl) return '未找到合适画质';
-
-    const targetQuality = targetEl.textContent.trim();
-
-    // 3. 检查是否已经是目标画质
-    if (curText === targetQuality) {
-      updateBadgeQuality(targetQuality);
-      return `已处于目标画质 (${targetQuality})`;
-    }
-
-    // 切换前再次确保解锁
-    unlockQualityRestrictions();
-
-    // 4. 模拟点击切换
-    targetEl.click();
-
-    // 5. 等待切换结果生效
-    try {
-      await waitFor(() => {
-        const cur = document.querySelector(SELECTORS.currentQuality);
-        return cur && cur.textContent.trim() === targetQuality;
-      }, 4000, `等待画质切换至 ${targetQuality}`, signal);
-    } catch (e) {
-      // 若超时仍按当前页面文本显示
-    }
-
-    const finalQuality = document.querySelector(SELECTORS.currentQuality)?.textContent.trim() || targetQuality;
-    updateBadgeQuality(finalQuality);
-    return `成功切换至: ${finalQuality}`;
+    if (signal?.aborted) throw abortError();
+    const current = document.querySelector(SELECTORS.currentQuality)?.textContent.trim();
+    updateBadgeQuality(current || '未知画质');
+    throw new Error('未确认切换至 ' + (targetQuality || '目标画质') + '，当前画质：' + (current || '未知'));
   }
 
   /**
-   * 进入观影模式（网页全屏）
+   * 检查当前是否已处于观影模式（网页全屏）
+   * 结合页面 body 样式标记与播放器控制按钮类名进行双重可靠判定
+   */
+  function isTheaterModeActive() {
+    if (document.body?.classList.contains('mode-page-full') || document.body?.classList.contains('mode-page-theater')) {
+      return true;
+    }
+    const narrowBtn = document.querySelector(SELECTORS.theaterActiveMarks);
+    if (narrowBtn) {
+      return true;
+    }
+    const btn = document.querySelector(SELECTORS.theaterBtns);
+    if (btn && (btn.classList.contains('player-narrowpage') || btn.getAttribute('title')?.includes('退出'))) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * 进入观影模式（网页全屏 / 展开半屏）
+   * 按照用户建议：进入页面后持续轮询 10 秒，每秒检测并尝试点击 1 次
    */
   async function applyTheaterMode(signal) {
     if (!config.autoTheater) return '未开启自动观影模式';
 
-    const theaterBtn = await waitFor(() => document.querySelector(SELECTORS.theaterBtn),
-      config.timeout, '等待观影模式按钮', signal);
+    const totalSeconds = 10; // 轮询10秒，每秒1次
+    let clickCount = 0;
 
-    // player-narrowpage 类名代表当前已处于网页全屏模式
-    if (theaterBtn.classList.contains('player-narrowpage')) {
-      return '已处于观影模式';
+    for (let sec = 1; sec <= totalSeconds; sec++) {
+      if (signal?.aborted) throw abortError();
+
+      // 1. 如果检测到已成功处于网页全屏，停止轮询避免反向触发退出
+      if (isTheaterModeActive()) {
+        log(`观影模式：第 ${sec} 秒检测已处于网页全屏状态，无需重复点击`);
+        return clickCount > 0 ? `成功进入观影模式 (第${sec}秒确认)` : '已处于观影模式';
+      }
+
+      // 2. 查找网页全屏按钮
+      const theaterBtn = document.querySelector(SELECTORS.theaterBtns);
+      if (theaterBtn) {
+        // 若按钮自身已变成退出全屏标记，则确认已在全屏
+        if (theaterBtn.classList.contains('player-narrowpage') || theaterBtn.getAttribute('title')?.includes('退出')) {
+          log(`观影模式：第 ${sec} 秒检测到退出全屏按钮，停止点击`);
+          return '已处于观影模式';
+        }
+
+        try {
+          // 切换按钮每轮只能点击一次，重复派发会立即退出全屏。
+          theaterBtn.click();
+          clickCount++;
+          log(`观影模式：第 ${sec}/10 秒检测到按钮并执行点击 (累计点击 ${clickCount} 次)`);
+        } catch (err) {
+          console.warn(`[虎牙直播优化器] 第 ${sec} 秒点击异常:`, err);
+        }
+
+        // 点击后等待 300ms 快速校验是否生效
+        await sleep(300, signal);
+        if (isTheaterModeActive()) {
+          log(`观影模式：第 ${sec} 秒成功进入网页全屏！`);
+          return `成功进入观影模式 (第${sec}秒)`;
+        }
+        // 补齐至 1 秒
+        await sleep(700, signal);
+      } else {
+        log(`观影模式：第 ${sec}/10 秒未找到全屏按钮，等待下一秒继续重试...`);
+        await sleep(1000, signal);
+      }
     }
 
-    theaterBtn.click();
+    if (isTheaterModeActive()) {
+      return '已进入观影模式';
+    }
 
-    // 等待模式切换确认
-    try {
-      await waitFor(() => {
-        const btn = document.querySelector(SELECTORS.theaterBtn);
-        return btn && btn.classList.contains('player-narrowpage');
-      }, 3000, '进入观影模式', signal);
-    } catch (e) {}
-
-    return '已进入观影模式';
+    return `轮询 10 秒完成 (共尝试点击 ${clickCount} 次)`;
   }
 
   /**
    * 手动切换观影模式
    */
   function toggleTheaterMode() {
-    const btn = document.querySelector(SELECTORS.theaterBtn);
+    // 手动全屏只取消自动全屏，画质优化仍继续。
+    runner.theaterController?.abort();
+    const btn = document.querySelector(SELECTORS.theaterBtns) || document.querySelector(SELECTORS.theaterActiveMarks);
     if (btn) {
       btn.click();
       log('已切换观影模式');
@@ -309,110 +362,141 @@
   async function applyAdSkipper(signal) {
     if (!config.skipAds) return '未开启广告跳过';
 
-    const startTime = Date.now();
-    const maxDuration = 15000; // 最多检测15秒
+    const deadline = Date.now() + 15000;
+    const attempts = new WeakMap();
+    const adContainers = '.hy-video-ad, .player-ad-tip, .player-videotype-ad, .ad-tip, .ad-countdown';
+    const visible = el => Boolean(el?.isConnected && el.getClientRects().length > 0
+      && getComputedStyle(el).visibility !== 'hidden' && getComputedStyle(el).display !== 'none');
+    let attempted = false;
+    let pending = null;
 
-    while (!signal?.aborted && Date.now() - startTime < maxDuration) {
+    while (Date.now() < deadline) {
+      if (signal?.aborted) throw abortError();
+      const containers = Array.from(document.querySelectorAll(adContainers)).filter(visible);
+      // 只在已观察到的广告容器消失，且没有新广告容器时确认结束。
+      if (pending?.length && pending.every(el => !visible(el)) && containers.length === 0) {
+        return '广告已结束（点击/快进后确认广告区域消失）';
+      }
       const skipButtons = document.querySelectorAll(SELECTORS.adButtons);
       for (const btn of skipButtons) {
-        if (btn && (btn.offsetParent !== null || btn.getClientRects().length > 0)) {
-          try {
-            btn.click();
-            log('成功跳过片头广告');
-            return '已成功跳过片头广告';
-          } catch (e) {}
-        }
-      }
-
-      // 尝试快进片头 video
-      const adVideo = document.querySelector('.hy-video-ad video, .player-ad-tip video, .player-videotype-ad video');
-      if (adVideo && !adVideo.paused && adVideo.duration > 0) {
+        if (!visible(btn) || btn.disabled || btn.getAttribute('aria-disabled') === 'true') continue;
+        if (Date.now() - (attempts.get(btn) ?? -Infinity) < 1500) continue;
+        if (signal?.aborted) throw abortError();
+        attempts.set(btn, Date.now());
         try {
-          adVideo.currentTime = adVideo.duration;
-          adVideo.muted = true;
+          btn.click();
+          attempted = true;
+          pending = containers;
+          // 点击后继续检测结果，不把派发点击当成跳过成功。
+          break;
         } catch (e) {}
       }
 
+      const adVideo = document.querySelector('.hy-video-ad video, .player-ad-tip video, .player-videotype-ad video');
+      if (visible(adVideo) && !adVideo.paused && Number.isFinite(adVideo.duration) && adVideo.duration > 0
+          && Date.now() - (attempts.get(adVideo) ?? -Infinity) >= 1500) {
+        attempts.set(adVideo, Date.now());
+        try {
+          adVideo.currentTime = adVideo.duration;
+          attempted = true;
+          pending = containers;
+        } catch (e) {}
+      }
       await sleep(500, signal);
     }
-
-    return '广告检测完成 (未发现片头广告或已播放完毕)';
+    if (signal?.aborted) throw abortError();
+    return attempted ? '广告检测结束：已尝试跳过，但未确认广告结束' : '广告检测结束：未发现可操作的跳过按钮';
   }
 
   // ================= 4. 任务调度与 SPA 切台监听 =================
   class OptimizerRunner {
     constructor() {
-      this.controller = new AbortController();
+      this.controller = null;
       this.isProcessing = false;
     }
 
     abort() {
-      this.controller.abort();
-      this.controller = new AbortController();
+      this.theaterController?.abort();
+      this.controller?.abort();
+      this.controller = null;
       this.isProcessing = false;
     }
 
     async execute() {
-      if (this.isProcessing) {
-        this.abort();
+      clearTimeout(navigationTimer);
+      this.abort();
+      if (!isLiveRoom()) {
+        updateBadgeStatus('非直播页面');
+        return;
       }
-
+      const controller = new AbortController();
+      this.controller = controller;
+      const theaterController = new AbortController();
+      this.theaterController = theaterController;
       this.isProcessing = true;
-      const signal = this.controller.signal;
+      const signal = controller.signal;
 
       try {
         log('开始执行优化流程...');
         updateBadgeStatus('优化中...');
+        await sleep(200, signal);
+        if (signal.aborted) throw abortError();
 
-        // 等待页面基础渲染就绪
-        await sleep(600, signal);
-
-        const tasks = [
-          ['画质优化', () => applyQuality(signal)],
-          ['观影模式', () => applyTheaterMode(signal)],
-          ['广告跳过', () => applyAdSkipper(signal)]
+        const jobs = [
+          ['观影模式', applyTheaterMode(theaterController.signal).catch(err => {
+            if (theaterController.signal.aborted) return '自动观影已取消';
+            throw err;
+          })],
+          ['画质优化', applyQuality(signal)],
+          ['广告跳过', applyAdSkipper(signal)]
         ];
-
-        await Promise.allSettled(tasks.map(async ([name, action]) => {
-          try {
-            const res = await action();
-            if (!signal.aborted) {
-              log(`${name}：${res}`);
-            }
-          } catch (err) {
-            if (!signal.aborted && err.name !== 'AbortError') {
-              console.warn(`[虎牙直播优化器] ${name}异常:`, err.message || err);
-            }
-          }
-        }));
-
-        if (!signal.aborted) {
-          updateBadgeStatus('已就绪');
+        const results = await Promise.allSettled(jobs.map(([, promise]) => promise));
+        if (signal.aborted) return;
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled') log(jobs[index][0] + '：' + result.value);
+          else console.warn('[虎牙直播优化器] ' + jobs[index][0] + '异常:', result.reason);
+        });
+        if (results.some(result => result.status === 'rejected')) {
+          updateBadgeStatus('部分优化失败');
+        } else {
+          updateBadgeQuality(document.querySelector(SELECTORS.currentQuality)?.textContent.trim() || '已就绪');
         }
       } catch (err) {
         if (!signal.aborted) {
           console.warn('[虎牙直播优化器] 优化任务执行中断:', err);
-          updateBadgeStatus('就绪');
+          updateBadgeStatus('优化失败');
         }
       } finally {
-        this.isProcessing = false;
+        // 旧任务只能清理自己的状态，不能影响已启动的新任务。
+        if (this.controller === controller) {
+          this.controller = null;
+          this.isProcessing = false;
+        }
       }
     }
   }
 
   const runner = new OptimizerRunner();
 
-  let lastUrl = window.location.href;
+  // 房间身份按域名和路径判断，查询参数或锚点变化不应打断画质初始化。
+  const roomUrl = () => {
+    const url = new URL(window.location.href);
+    return url.origin + url.pathname.replace(/\/+$/, '');
+  };
+  let lastUrl = roomUrl();
+  let navigationTimer = null;
   function handleUrlChange() {
+    const currentUrl = roomUrl();
+    if (currentUrl === lastUrl) return;
+    lastUrl = currentUrl;
+    clearTimeout(navigationTimer);
+    // 即使关闭自动切台，也要停止旧页面任务。
+    runner.abort();
     if (!config.watchNavigation) return;
-    const currentUrl = window.location.href;
-    if (currentUrl !== lastUrl) {
-      lastUrl = currentUrl;
-      log('检测到直播间地址变动，重新运行优化流程...');
-      setTimeout(() => {
-        runner.execute();
-      }, 800);
-    }
+    navigationTimer = setTimeout(() => {
+      navigationTimer = null;
+      if (config.watchNavigation) runner.execute();
+    }, 800);
   }
 
   function hookHistory() {
@@ -766,7 +850,7 @@
         <div class="hy-opt-header">
           <div class="hy-opt-header-title">
             <span>⚡ 虎牙直播优化器</span>
-            <span class="hy-opt-badge-tag">v2.0.0</span>
+            <span class="hy-opt-badge-tag">v2.0.4</span>
           </div>
           <button class="hy-opt-close-btn" id="hy-opt-close-btn" title="关闭 (Esc)">✕</button>
         </div>
@@ -963,10 +1047,11 @@
     }
 
     // 浏览器前进/后退缓存唤醒处理
-    window.addEventListener('pageshow', () => {
-      runner.execute();
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) runner.execute();
     });
     window.addEventListener('pagehide', () => {
+      clearTimeout(navigationTimer);
       runner.abort();
     });
   }

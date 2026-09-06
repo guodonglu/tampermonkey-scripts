@@ -8,7 +8,7 @@
 
 | 脚本名称 | 适用站点 | ⚡ 一键安装 | 📖 详细文档 | 版本 | 核心功能简介 |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| **虎牙画质优化与观影增强器** | `huya.com` | [点击一键安装](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-live-optimizer/huya-live-optimizer.user.js) | [查看说明](./huya-live-optimizer/README.md) | `v2.0.0` | 自动免扫码解锁原画/蓝光画质限制、切换最高/指定画质、自动进入观影模式（网页全屏）、毫秒级跳过片头广告、切台监听与毛玻璃设置面板。 |
+| **虎牙画质优化与观影增强器** | `huya.com` | [点击一键安装](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-live-optimizer/huya-live-optimizer.user.js) | [查看说明](./huya-live-optimizer/README.md) | `v2.0.2` | 自动免扫码解锁原画/蓝光画质限制、切换最高/指定画质、自动进入观影模式（网页全屏）、毫秒级跳过片头广告、切台监听与毛玻璃设置面板。 |
 | **虎牙广告与干扰屏蔽器** | `huya.com` | [点击一键安装](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-ad-blocker/huya-ad-blocker.user.js) | [查看说明](./huya-ad-blocker/README.md) | `v1.0.0` | 彻底屏蔽聊天栏上方商业广告（聊天栏自动顶格铺满）、小黄车/互动插件等悬浮营销、APP下载二维码、首充百宝箱、视频水印等。 |
 | **虎牙主播屏蔽器** | `huya.com` | [点击一键安装](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-streamer-blocker/huya-streamer-blocker.user.js) | [查看说明](./huya-streamer-blocker/README.md) | `v1.3.0` | 支持房间号/链接/主播名彻底屏蔽隐藏卡片；误入拦截静音；仅列表页展示悬浮管理标签。 |
 
