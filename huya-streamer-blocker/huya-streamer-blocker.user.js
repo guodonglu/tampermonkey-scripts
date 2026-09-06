@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         虎牙直播主播屏蔽器 (按房间号/链接/主播名)
 // @namespace    https://github.com/guodonglu/huya-streamer-blocker
-// @version      1.3.0
-// @description  输入房间号、直播间链接或主播名一键屏蔽虎牙主播。仅在列表页展示悬浮管理标签（详情页不打扰），全站列表卡片彻底隐藏（直接看不到），误入已屏蔽直播间自动拦截静音，卡片悬停一键快捷屏蔽。
+// @version      1.3.1
+// @description  输入房间号、直播间链接或主播名一键屏蔽虎牙主播。仅在列表页展示悬浮管理标签（详情页不打扰），全站列表卡片彻底隐藏（直接看不到），误入已屏蔽直播间自动拦截静音，卡片悬停一键快捷屏蔽。独立作用域样式，绝不与其它插件冲突。
 // @author       guodonglu
 // @match        *://*.huya.com/*
 // @grant        GM_getValue
@@ -51,7 +51,10 @@
     } catch (e) {}
   }
 
-  let blockedList = getStorage(STORAGE_KEY_LIST, []);
+  const rawList = getStorage(STORAGE_KEY_LIST, []);
+  let blockedList = (Array.isArray(rawList) ? rawList : []).filter(item => {
+    return item && typeof item.id === 'string' && item.id.trim().length > 0;
+  });
   let config = Object.assign({}, DEFAULT_CONFIG, getStorage(STORAGE_KEY_CONFIG, {}));
 
   // 虎牙保留路径与公共列表模块名 (用于区分列表页与直播详情页)
@@ -71,6 +74,7 @@
   }
 
   function saveList() {
+    blockedList = (blockedList || []).filter(item => item && typeof item.id === 'string' && item.id.trim().length > 0);
     setStorage(STORAGE_KEY_LIST, blockedList);
     applyFilter();
     updateUIList();
@@ -491,8 +495,8 @@
       }
 
       /* 管理面板弹窗 */
-      #hy-modal-mask {
-        display: none;
+      #hy-sb-modal-mask {
+        display: none !important;
         position: fixed;
         inset: 0;
         z-index: 999999;
@@ -501,10 +505,10 @@
         align-items: center;
         justify-content: center;
       }
-      #hy-modal-mask.show {
-        display: flex;
+      #hy-sb-modal-mask.show {
+        display: flex !important;
       }
-      #hy-modal-content {
+      #hy-sb-modal-content {
         background: #ffffff;
         color: #333333;
         width: 520px;
@@ -523,7 +527,7 @@
         to { opacity: 1; transform: scale(1); }
       }
 
-      .hy-modal-header {
+      .hy-sb-modal-header {
         padding: 16px 20px;
         background: #f8f9fa;
         border-bottom: 1px solid #e9ecef;
@@ -531,7 +535,7 @@
         justify-content: space-between;
         align-items: center;
       }
-      .hy-modal-header h3 {
+      .hy-sb-modal-header h3 {
         margin: 0;
         font-size: 16px;
         font-weight: 600;
@@ -540,7 +544,7 @@
         align-items: center;
         gap: 6px;
       }
-      .hy-modal-close {
+      .hy-sb-modal-close {
         background: transparent;
         border: none;
         font-size: 20px;
@@ -549,24 +553,24 @@
         padding: 2px 6px;
         border-radius: 4px;
       }
-      .hy-modal-close:hover {
+      .hy-sb-modal-close:hover {
         color: #212529;
         background: #e9ecef;
       }
 
-      .hy-modal-body {
+      .hy-sb-modal-body {
         padding: 18px 20px;
         overflow-y: auto;
         flex: 1;
       }
 
       /* 添加表单 */
-      .hy-form-group {
+      .hy-sb-form-group {
         display: flex;
         gap: 8px;
         margin-bottom: 15px;
       }
-      .hy-input {
+      .hy-sb-input {
         flex: 1;
         padding: 8px 12px;
         border: 1px solid #ced4da;
@@ -575,15 +579,15 @@
         outline: none;
         transition: border-color 0.2s;
       }
-      .hy-input:focus {
+      .hy-sb-input:focus {
         border-color: #ff7700;
         box-shadow: 0 0 0 2px rgba(255, 119, 0, 0.15);
       }
-      .hy-input-remark {
+      .hy-sb-input-remark {
         width: 110px;
         flex: none;
       }
-      .hy-btn-add {
+      .hy-sb-btn-add {
         background: #ff7700;
         color: #fff;
         border: none;
@@ -594,12 +598,12 @@
         font-weight: 500;
         white-space: nowrap;
       }
-      .hy-btn-add:hover {
+      .hy-sb-btn-add:hover {
         background: #e66b00;
       }
 
       /* 统计栏与搜索 */
-      .hy-bar {
+      .hy-sb-bar {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -607,7 +611,7 @@
         font-size: 12px;
         color: #6c757d;
       }
-      .hy-search {
+      .hy-sb-search {
         padding: 4px 8px;
         border: 1px solid #dee2e6;
         border-radius: 4px;
@@ -616,19 +620,19 @@
       }
 
       /* 列表区域 */
-      .hy-list-container {
+      .hy-sb-list-container {
         border: 1px solid #e9ecef;
         border-radius: 6px;
         max-height: 240px;
         overflow-y: auto;
       }
-      .hy-list-empty {
+      .hy-sb-list-empty {
         padding: 30px 10px;
         text-align: center;
         color: #adb5bd;
         font-size: 13px;
       }
-      .hy-list-item {
+      .hy-sb-list-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -636,31 +640,31 @@
         border-bottom: 1px solid #f1f3f5;
         font-size: 13px;
       }
-      .hy-list-item:last-child {
+      .hy-sb-list-item:last-child {
         border-bottom: none;
       }
-      .hy-item-left {
+      .hy-sb-item-left {
         display: flex;
         align-items: center;
         gap: 8px;
       }
-      .hy-item-id {
+      .hy-sb-item-id {
         font-weight: 600;
         color: #1971c2;
         text-decoration: none;
       }
-      .hy-item-id:hover {
+      .hy-sb-item-id:hover {
         text-decoration: underline;
       }
-      .hy-item-remark {
+      .hy-sb-item-remark {
         color: #495057;
         font-size: 12px;
       }
-      .hy-item-date {
+      .hy-sb-item-date {
         color: #868e96;
         font-size: 11px;
       }
-      .hy-btn-del {
+      .hy-sb-btn-del {
         background: transparent;
         border: none;
         color: #fa5252;
@@ -669,12 +673,12 @@
         padding: 2px 6px;
         border-radius: 4px;
       }
-      .hy-btn-del:hover {
+      .hy-sb-btn-del:hover {
         background: #ffe3e3;
       }
 
       /* 选项 */
-      .hy-options-box {
+      .hy-sb-options-box {
         margin-top: 15px;
         padding-top: 12px;
         border-top: 1px solid #e9ecef;
@@ -684,7 +688,7 @@
         font-size: 12px;
         color: #495057;
       }
-      .hy-option-item {
+      .hy-sb-option-item {
         display: flex;
         align-items: center;
         gap: 6px;
@@ -692,7 +696,7 @@
       }
 
       /* 底部工具条 */
-      .hy-modal-footer {
+      .hy-sb-modal-footer {
         padding: 12px 20px;
         background: #f8f9fa;
         border-top: 1px solid #e9ecef;
@@ -701,11 +705,11 @@
         align-items: center;
         font-size: 12px;
       }
-      .hy-footer-btn-group {
+      .hy-sb-footer-btn-group {
         display: flex;
         gap: 8px;
       }
-      .hy-btn-sm {
+      .hy-sb-btn-sm {
         background: #e9ecef;
         color: #495057;
         border: none;
@@ -714,13 +718,13 @@
         font-size: 12px;
         cursor: pointer;
       }
-      .hy-btn-sm:hover {
+      .hy-sb-btn-sm:hover {
         background: #dee2e6;
       }
-      .hy-btn-danger {
+      .hy-sb-btn-danger {
         color: #e03131;
       }
-      .hy-btn-danger:hover {
+      .hy-sb-btn-danger:hover {
         background: #ffe3e3;
       }
 
@@ -899,55 +903,56 @@
   }
 
   function createModal() {
-    if (document.getElementById('hy-modal-mask')) return;
+    if (document.getElementById('hy-sb-modal-mask')) return;
 
     const mask = document.createElement('div');
-    mask.id = 'hy-modal-mask';
+    mask.id = 'hy-sb-modal-mask';
+    mask.style.setProperty('display', 'none', 'important');
     mask.innerHTML = `
-      <div id="hy-modal-content">
-        <div class="hy-modal-header">
+      <div id="hy-sb-modal-content">
+        <div class="hy-sb-modal-header">
           <h3>🛡️ 虎牙主播屏蔽管理</h3>
-          <button class="hy-modal-close" id="hy-modal-close">&times;</button>
+          <button class="hy-sb-modal-close" id="hy-sb-modal-close" title="关闭 (Esc)">&times;</button>
         </div>
-        <div class="hy-modal-body">
-          <div class="hy-form-group">
-            <input type="text" id="hy-input-id" class="hy-input" placeholder="输入房间号ID、网址或主播名 (如 229085 或 红莲)" />
-            <input type="text" id="hy-input-remark" class="hy-input hy-input-remark" placeholder="备注 (可选)" />
-            <button id="hy-btn-add" class="hy-btn-add">添加屏蔽</button>
+        <div class="hy-sb-modal-body">
+          <div class="hy-sb-form-group">
+            <input type="text" id="hy-input-id" class="hy-sb-input" placeholder="输入房间号ID、网址或主播名 (如 229085 或 红莲)" />
+            <input type="text" id="hy-input-remark" class="hy-sb-input hy-sb-input-remark" placeholder="备注 (可选)" />
+            <button id="hy-btn-add" class="hy-sb-btn-add">添加屏蔽</button>
           </div>
 
-          <div class="hy-bar">
+          <div class="hy-sb-bar">
             <span id="hy-stat-text">已屏蔽 ${blockedList.length} 个主播 | 本页隐藏 ${filteredCount} 个卡片</span>
-            <input type="text" id="hy-search-input" class="hy-search" placeholder="筛选已屏蔽..." />
+            <input type="text" id="hy-search-input" class="hy-sb-search" placeholder="筛选已屏蔽..." />
           </div>
 
-          <div class="hy-list-container" id="hy-list-container">
+          <div class="hy-sb-list-container" id="hy-list-container">
             <!-- 动态填充列表 -->
           </div>
 
-          <div class="hy-options-box">
-            <label class="hy-option-item">
+          <div class="hy-sb-options-box">
+            <label class="hy-sb-option-item">
               <input type="checkbox" id="hy-opt-quick-btn" ${config.showQuickBtn ? 'checked' : ''} />
               在直播卡片右上角显示快捷“🚫 屏蔽”小按钮 (鼠标悬停时可见)
             </label>
-            <label class="hy-option-item">
+            <label class="hy-sb-option-item">
               <input type="checkbox" id="hy-opt-float-btn" ${config.showFloatBtn ? 'checked' : ''} />
               在列表页右侧显示悬浮入口标签 (详情页自动隐藏)
             </label>
-            <label class="hy-option-item">
+            <label class="hy-sb-option-item">
               <input type="checkbox" id="hy-opt-redirect" ${config.autoRedirect ? 'checked' : ''} />
               误入被屏蔽直播间时直接返回首页 (默认显示拦截遮罩)
             </label>
           </div>
         </div>
 
-        <div class="hy-modal-footer">
-          <div class="hy-footer-btn-group">
-            <button id="hy-btn-export" class="hy-btn-sm" title="导出黑名单为JSON文件">导出配置</button>
-            <button id="hy-btn-import" class="hy-btn-sm" title="从JSON文件导入黑名单">导入配置</button>
+        <div class="hy-sb-modal-footer">
+          <div class="hy-sb-footer-btn-group">
+            <button id="hy-btn-export" class="hy-sb-btn-sm" title="导出黑名单为JSON文件">导出配置</button>
+            <button id="hy-btn-import" class="hy-sb-btn-sm" title="从JSON文件导入黑名单">导入配置</button>
             <input type="file" id="hy-file-input" style="display:none;" accept=".json" />
           </div>
-          <button id="hy-btn-clear-all" class="hy-btn-sm hy-btn-danger" title="清空全部屏蔽列表">清空全部</button>
+          <button id="hy-btn-clear-all" class="hy-sb-btn-sm hy-sb-btn-danger" title="清空全部屏蔽列表">清空全部</button>
         </div>
       </div>
     `;
@@ -955,9 +960,9 @@
     (document.body || document.documentElement).appendChild(mask);
 
     // 事件绑定
-    document.getElementById('hy-modal-close').addEventListener('click', toggleModal);
+    document.getElementById('hy-sb-modal-close').addEventListener('click', closeModal);
     mask.addEventListener('click', (e) => {
-      if (e.target === mask) toggleModal();
+      if (e.target === mask) closeModal();
     });
 
     const addBtn = document.getElementById('hy-btn-add');
@@ -1082,29 +1087,30 @@
 
     const query = (filterQuery || '').trim().toLowerCase();
     const displayList = blockedList.filter(item => {
+      if (!item || !item.id) return false;
       if (!query) return true;
-      return (item.id && item.id.toLowerCase().includes(query)) ||
+      return item.id.toLowerCase().includes(query) ||
              (item.remark && item.remark.toLowerCase().includes(query));
     });
 
     if (displayList.length === 0) {
-      listContainer.innerHTML = `<div class="hy-list-empty">${query ? '无匹配的主播' : '暂无屏蔽的主播，输入房间号或主播名即可添加'}</div>`;
+      listContainer.innerHTML = `<div class="hy-sb-list-empty">${query ? '无匹配的主播' : '暂无屏蔽的主播，输入房间号或主播名即可添加'}</div>`;
       updateCounterBadge();
       return;
     }
 
     listContainer.innerHTML = displayList.map(item => `
-      <div class="hy-list-item">
-        <div class="hy-item-left">
-          <a class="hy-item-id" href="https://www.huya.com/${item.id}" target="_blank" title="打开直播间">${escapeHtml(item.id)}</a>
-          ${item.remark ? `<span class="hy-item-remark">(${escapeHtml(item.remark)})</span>` : ''}
-          <span class="hy-item-date">${item.date || ''}</span>
+      <div class="hy-sb-list-item">
+        <div class="hy-sb-item-left">
+          <a class="hy-sb-item-id" href="https://www.huya.com/${encodeURIComponent(item.id)}" target="_blank" title="打开直播间">${escapeHtml(item.id)}</a>
+          ${item.remark ? `<span class="hy-sb-item-remark">(${escapeHtml(item.remark)})</span>` : ''}
+          <span class="hy-sb-item-date">${item.date || ''}</span>
         </div>
-        <button class="hy-btn-del" data-id="${escapeHtml(item.id)}" title="取消屏蔽">删除</button>
+        <button class="hy-sb-btn-del" data-id="${escapeHtml(item.id)}" title="取消屏蔽">删除</button>
       </div>
     `).join('');
 
-    listContainer.querySelectorAll('.hy-btn-del').forEach(btn => {
+    listContainer.querySelectorAll('.hy-sb-btn-del').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id');
         removeBlockedItem(id);
@@ -1120,23 +1126,38 @@
     return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
-  function toggleModal() {
-    const mask = document.getElementById('hy-modal-mask');
+  function closeModal() {
+    const mask = document.getElementById('hy-sb-modal-mask');
+    if (mask) {
+      mask.classList.remove('show');
+      mask.style.setProperty('display', 'none', 'important');
+    }
+  }
+
+  function openModal() {
+    let mask = document.getElementById('hy-sb-modal-mask');
     if (!mask) {
       createModal();
-      toggleModal();
-      return;
+      mask = document.getElementById('hy-sb-modal-mask');
     }
-    const isShowing = mask.classList.contains('show');
-    if (isShowing) {
-      mask.classList.remove('show');
-    } else {
+    if (mask) {
       mask.classList.add('show');
+      mask.style.setProperty('display', 'flex', 'important');
       updateUIList();
       setTimeout(() => {
         const input = document.getElementById('hy-input-id');
         if (input) input.focus();
       }, 100);
+    }
+  }
+
+  function toggleModal() {
+    const mask = document.getElementById('hy-sb-modal-mask');
+    const isShowing = mask && mask.classList.contains('show') && mask.style.display !== 'none';
+    if (isShowing) {
+      closeModal();
+    } else {
+      openModal();
     }
   }
 
@@ -1166,8 +1187,11 @@
   function init() {
     injectStyles();
 
-    // 快捷键 Alt + H 随时呼出设置面板
+    // 快捷键 Alt + H 随时呼出设置面板，Esc 键关闭弹窗
     window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
       if (e.altKey && (e.key === 'h' || e.key === 'H')) {
         toggleModal();
       }

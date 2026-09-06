@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         虎牙直播全方位广告与干扰元素屏蔽器
 // @namespace    https://github.com/guodonglu/huya-ad-blocker
-// @version      1.0.1
-// @description  全网最强虎牙直播纯净净化脚本：彻底屏蔽直播间商业横幅广告、播放器悬浮营销挂件（小黄车/更多活动/互动插件）、APP下载二维码、顶部头图广告、首充百宝箱营销、视频水印、聊天区牛皮癣推广等。纯原生 CSS 极速过滤，0 CPU 开销，绝不卡顿。
+// @version      1.0.2
+// @description  全网最强虎牙直播纯净净化脚本：彻底屏蔽直播间商业横幅广告、播放器悬浮营销挂件（小黄车/更多活动/互动插件）、APP下载二维码、顶部头图广告、首充百宝箱营销、视频水印、聊天区牛皮癣推广等。纯原生 CSS 极速过滤，0 CPU 开销，绝不卡顿，独立作用域样式。
 // @author       guodonglu
 // @match        *://*.huya.com/*
 // @grant        GM_getValue
@@ -348,7 +348,7 @@
         opacity: 1;
         visibility: visible;
       }
-      .hy-modal-card {
+      .hy-ab-modal-card {
         background: #1e1e24;
         color: #f1f2f6;
         width: 520px;
@@ -363,10 +363,10 @@
         transform: scale(0.95);
         transition: transform 0.2s ease;
       }
-      #hy-adblocker-modal-overlay.open .hy-modal-card {
+      #hy-adblocker-modal-overlay.open .hy-ab-modal-card {
         transform: scale(1);
       }
-      .hy-modal-header {
+      .hy-ab-modal-header {
         padding: 16px 20px;
         background: #25262e;
         display: flex;
@@ -374,7 +374,7 @@
         justify-content: space-between;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       }
-      .hy-modal-header h3 {
+      .hy-ab-modal-header h3 {
         margin: 0;
         font-size: 16px;
         font-weight: 600;
@@ -383,7 +383,7 @@
         align-items: center;
         gap: 8px;
       }
-      .hy-modal-close-btn {
+      .hy-ab-modal-close-btn {
         background: transparent;
         border: none;
         color: #999;
@@ -392,17 +392,17 @@
         padding: 0 4px;
         line-height: 1;
       }
-      .hy-modal-close-btn:hover {
+      .hy-ab-modal-close-btn:hover {
         color: #fff;
       }
-      .hy-modal-body {
+      .hy-ab-modal-body {
         padding: 16px 20px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
         gap: 12px;
       }
-      .hy-toggle-group {
+      .hy-ab-toggle-group {
         background: rgba(255, 255, 255, 0.04);
         border-radius: 8px;
         padding: 10px 14px;
@@ -411,38 +411,38 @@
         justify-content: space-between;
         transition: background 0.15s ease;
       }
-      .hy-toggle-group:hover {
+      .hy-ab-toggle-group:hover {
         background: rgba(255, 255, 255, 0.07);
       }
-      .hy-toggle-info {
+      .hy-ab-toggle-info {
         display: flex;
         flex-direction: column;
         gap: 2px;
       }
-      .hy-toggle-title {
+      .hy-ab-toggle-title {
         font-size: 14px;
         font-weight: 500;
         color: #fff;
       }
-      .hy-toggle-desc {
+      .hy-ab-toggle-desc {
         font-size: 12px;
         color: #8f92a1;
       }
 
       /* Switch */
-      .hy-switch {
+      .hy-ab-switch {
         position: relative;
         display: inline-block;
         width: 44px;
         height: 24px;
         flex-shrink: 0;
       }
-      .hy-switch input {
+      .hy-ab-switch input {
         opacity: 0;
         width: 0;
         height: 0;
       }
-      .hy-slider {
+      .hy-ab-slider {
         position: absolute;
         cursor: pointer;
         inset: 0;
@@ -450,7 +450,7 @@
         transition: .25s;
         border-radius: 24px;
       }
-      .hy-slider:before {
+      .hy-ab-slider:before {
         position: absolute;
         content: "";
         height: 18px;
@@ -461,14 +461,14 @@
         transition: .25s;
         border-radius: 50%;
       }
-      .hy-switch input:checked + .hy-slider {
+      .hy-ab-switch input:checked + .hy-ab-slider {
         background-color: #ff7200;
       }
-      .hy-switch input:checked + .hy-slider:before {
+      .hy-ab-switch input:checked + .hy-ab-slider:before {
         transform: translateX(20px);
       }
 
-      .hy-modal-footer {
+      .hy-ab-modal-footer {
         padding: 12px 20px;
         background: #25262e;
         display: flex;
@@ -476,7 +476,7 @@
         justify-content: space-between;
         border-top: 1px solid rgba(255, 255, 255, 0.08);
       }
-      .hy-btn-reset {
+      .hy-ab-btn-reset {
         background: transparent;
         border: 1px solid rgba(255, 255, 255, 0.2);
         color: #bbb;
@@ -485,11 +485,11 @@
         font-size: 12px;
         cursor: pointer;
       }
-      .hy-btn-reset:hover {
+      .hy-ab-btn-reset:hover {
         background: rgba(255, 255, 255, 0.1);
         color: #fff;
       }
-      .hy-btn-save {
+      .hy-ab-btn-save {
         background: #ff7200;
         border: none;
         color: #fff;
@@ -499,7 +499,7 @@
         font-weight: 500;
         cursor: pointer;
       }
-      .hy-btn-save:hover {
+      .hy-ab-btn-save:hover {
         background: #ff851b;
       }
     `;
@@ -525,15 +525,15 @@
     modalContainer = document.createElement('div');
     modalContainer.id = 'hy-adblocker-modal-overlay';
     modalContainer.innerHTML = `
-      <div class="hy-modal-card">
-        <div class="hy-modal-header">
+      <div class="hy-ab-modal-card">
+        <div class="hy-ab-modal-header">
           <h3>
             <svg style="width:18px;height:18px;fill:#ff7200;" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
             虎牙广告拦截与纯净设置
           </h3>
-          <button class="hy-modal-close-btn" id="hy-close-modal">&times;</button>
+          <button class="hy-ab-modal-close-btn" id="hy-close-modal">&times;</button>
         </div>
-        <div class="hy-modal-body">
+        <div class="hy-ab-modal-body">
           ${renderToggle('blockSidebarAd', '聊天栏商业横幅广告', '屏蔽麦当劳等商业广告横幅，聊天栏自动顶格铺满')}
           ${renderToggle('blockPlayerWidgets', '播放器悬浮营销挂件', '屏蔽小黄车、上热门、甜蜜互动、更多活动图标及插件')}
           ${renderToggle('blockPlayerQrcode', '播放器二维码与APP下载', '屏蔽左下角吉祥物及下载二维码浮层')}
@@ -547,10 +547,10 @@
           ${renderToggle('autoCloseLoginPopup', '自动关闭未登录弹窗', '在未登录状态下自动关闭定时的强制登录弹出框')}
           ${renderToggle('showFloatBadge', '显示右下角管理悬浮标', '关闭后可随时通过油猴扩展菜单重新呼出本面板')}
         </div>
-        <div class="hy-modal-footer">
-          <button class="hy-btn-reset" id="hy-reset-config">恢复默认配置</button>
+        <div class="hy-ab-modal-footer">
+          <button class="hy-ab-btn-reset" id="hy-reset-config">恢复默认配置</button>
           <div style="display:flex;gap:8px;">
-            <button class="hy-btn-save" id="hy-save-modal">保存并应用</button>
+            <button class="hy-ab-btn-save" id="hy-save-modal">保存并应用</button>
           </div>
         </div>
       </div>
@@ -584,14 +584,14 @@
 
   function renderToggle(key, title, desc) {
     return `
-      <div class="hy-toggle-group">
-        <div class="hy-toggle-info">
-          <span class="hy-toggle-title">${title}</span>
-          <span class="hy-toggle-desc">${desc}</span>
+      <div class="hy-ab-toggle-group">
+        <div class="hy-ab-toggle-info">
+          <span class="hy-ab-toggle-title">${title}</span>
+          <span class="hy-ab-toggle-desc">${desc}</span>
         </div>
-        <label class="hy-switch">
+        <label class="hy-ab-switch">
           <input type="checkbox" id="toggle-${key}" ${config[key] ? 'checked' : ''}>
-          <span class="hy-slider"></span>
+          <span class="hy-ab-slider"></span>
         </label>
       </div>
     `;
