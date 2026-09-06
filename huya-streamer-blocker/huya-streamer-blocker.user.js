@@ -10,6 +10,7 @@
 // @grant        GM_registerMenuCommand
 // @grant        GM_addStyle
 // @run-at       document-start
+// @noframes
 // ==/UserScript==
 
 (function () {
@@ -237,7 +238,7 @@
       });
       filteredCount = 0;
       updateCounterBadge();
-      return;
+      if (!config.showQuickBtn) return;
     }
 
     // 常见卡片选择器覆盖
@@ -359,6 +360,7 @@
   }
 
   function checkAndInterceptRoom() {
+    if (window.self !== window.top) return;
     const currentSlug = getCurrentRoomSlug();
     if (!currentSlug) return;
 
@@ -453,7 +455,10 @@
       }
       .game-live-item:hover .hy-quick-block-btn,
       .live-card:hover .hy-quick-block-btn,
-      li:hover > .hy-quick-block-btn {
+      li:hover .hy-quick-block-btn,
+      [data-lp]:hover .hy-quick-block-btn,
+      .video-info-wrap:hover .hy-quick-block-btn,
+      .recommend-item:hover .hy-quick-block-btn {
         display: inline-block !important;
       }
       .hy-quick-block-btn:hover {
@@ -461,12 +466,12 @@
         transform: scale(1.08);
       }
 
-      /* 列表页右侧悬浮标签入口 (仅在列表页出现，详情页不出现) */
+      /* 列表页右侧悬浮标签入口 */
       #hy-float-trigger {
         position: fixed;
         right: 0;
         top: 36%;
-        z-index: 99998;
+        z-index: 2147483647 !important;
         background: #ff7700;
         color: #fff;
         padding: 8px 12px;
@@ -499,7 +504,7 @@
         display: none !important;
         position: fixed;
         inset: 0;
-        z-index: 999999;
+        z-index: 2147483647 !important;
         background: rgba(0, 0, 0, 0.55);
         backdrop-filter: blur(2px);
         align-items: center;
@@ -885,14 +890,20 @@
   function updateFloatButtonVisibility() {
     const floatBtn = document.getElementById('hy-float-trigger');
     if (!floatBtn) return;
-    if (!isRoomDetailPage() && config.showFloatBtn) {
+    if (config.showFloatBtn) {
       floatBtn.style.display = 'flex';
+      if (isRoomDetailPage()) {
+        floatBtn.style.opacity = '0.5';
+      } else {
+        floatBtn.style.opacity = '1';
+      }
     } else {
       floatBtn.style.display = 'none';
     }
   }
 
   function createFloatingButton() {
+    if (window.self !== window.top) return;
     if (document.getElementById('hy-float-trigger')) return;
     const btn = document.createElement('div');
     btn.id = 'hy-float-trigger';
@@ -903,6 +914,7 @@
   }
 
   function createModal() {
+    if (window.self !== window.top) return;
     if (document.getElementById('hy-sb-modal-mask')) return;
 
     const mask = document.createElement('div');
