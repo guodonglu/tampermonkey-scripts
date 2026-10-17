@@ -437,4 +437,60 @@ test('loader: SWR executes cached script synchronously before network returns', 
   assert.equal(storage.get('hy_aio_cached_version'), '3.1.0');
 });
 
+test('badge: auto-collapses after 10 seconds and uncollapses on new room navigation', async () => {
+  const env = setup();
+  const createdElements = [];
+  env.context.document.createElement = () => {
+    const classes = new Set();
+    const listeners = {};
+    const el = {
+      id: '',
+      style: {},
+      classList: {
+        add(c) { classes.add(c); },
+        remove(c) { classes.delete(c); },
+        contains(c) { return classes.has(c); }
+      },
+      appendChild() {},
+      querySelector: () => ({ style: {}, textContent: '', addEventListener() {} }),
+      querySelectorAll: () => [],
+      addEventListener: (type, fn) => { listeners[type] = fn; },
+      _trigger(type) { if (listeners[type]) listeners[type](); }
+    };
+    createdElements.push(el);
+    return el;
+  };
+  env.context.document.getElementById = (id) => (id === 'hy-aio-badge' ? null : { addEventListener() {}, style: {}, value: '', checked: false });
+
+  // Trigger DOMContentLoaded
+  env.events['DOMContentLoaded']();
+
+  const badge = env.getBadgeEl();
+  assert.ok(badge);
+  assert.equal(badge.classList.contains('hy-aio-collapsed'), false);
+
+  // Advance time by 5 seconds: still not collapsed
+  await env.tick(5000);
+  assert.equal(badge.classList.contains('hy-aio-collapsed'), false);
+
+  // Advance past 10 seconds: now collapsed
+  await env.tick(5001);
+  assert.equal(badge.classList.contains('hy-aio-collapsed'), true);
+
+  // Simulate mouseenter: user hovers, then mouseleave after timer elapsed
+  badge._trigger('mouseenter');
+  badge._trigger('mouseleave');
+  assert.equal(badge.classList.contains('hy-aio-collapsed'), true);
+
+  // Simulate changing room: should uncollapse and reset 10s timer
+  env.context.window.location.href = 'https://www.huya.com/99999';
+  env.handleUrlChange();
+  assert.equal(badge.classList.contains('hy-aio-collapsed'), false);
+
+  // Advance 10s again: collapses again
+  await env.tick(10001);
+  assert.equal(badge.classList.contains('hy-aio-collapsed'), true);
+});
+
+
 

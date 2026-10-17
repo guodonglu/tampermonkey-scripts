@@ -6,7 +6,7 @@
 // @updateURL    https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js
 // @downloadURL  https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js
 // @icon         https://www.huya.com/favicon.ico
-// @version      3.1.0
+// @version      3.2.0
 // @description  虎牙直播全功能一体化助手：免扫码解锁原画/蓝光画质、自动最高画质、网页全屏(观影模式)、毫秒级跳片头广告；全方位屏蔽商业横幅/挂件小黄车/二维码/水印；按房间号/主播名彻底屏蔽与卡片隐藏过滤。现代化多标签暗色毛玻璃控制中心与快捷悬浮徽标。
 // @author       guodonglu, mks155
 // @match        *://*.huya.com/*
@@ -60,6 +60,7 @@
 
     // 4. 全局偏好与 UI
     showFloatBadge: true,           // 是否显示右侧/右下角快捷悬浮徽标
+    autoCollapseBadge: true,        // 进入页面10秒后自动靠边收起（保留小头头，悬停滑出）
     activeTab: 0                    // 控制面板默认选中的标签页索引
   };
 
@@ -1114,6 +1115,8 @@
     checkAndInterceptRoom();
     debounceStreamerFilter();
     updateBadge();
+    uncollapseBadge();
+    scheduleBadgeCollapse(10000);
 
     if (!config.watchNavigation) return;
     navigationTimer = setTimeout(() => {
@@ -1172,13 +1175,40 @@
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
         cursor: pointer;
         box-shadow: 0 4px 18px rgba(0, 0, 0, 0.38);
-        transition: all 0.25s ease;
+        transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         user-select: none;
+        white-space: nowrap;
       }
       #hy-aio-badge:hover {
         background: linear-gradient(135deg, rgba(124, 92, 255, 0.95), rgba(255, 114, 0, 0.95));
         transform: translateY(-2px);
         box-shadow: 0 6px 22px rgba(255, 114, 0, 0.4);
+      }
+      /* 靠边收起状态：贴紧屏幕右边缘，只露出左侧闪电小图标头部，绝不遮挡聊天区 */
+      #hy-aio-badge.hy-aio-collapsed {
+        right: 0 !important;
+        transform: translateX(calc(100% - 34px)) !important;
+        border-radius: 18px 0 0 18px !important;
+        border-right: none !important;
+        padding-left: 10px !important;
+        padding-right: 14px !important;
+        opacity: 0.8 !important;
+        box-shadow: -2px 4px 14px rgba(0, 0, 0, 0.4) !important;
+      }
+      #hy-aio-badge.hy-aio-collapsed:hover {
+        transform: translateX(0) !important;
+        opacity: 1 !important;
+        box-shadow: -4px 6px 22px rgba(255, 114, 0, 0.45) !important;
+      }
+      #hy-aio-badge.hy-aio-collapsed .hy-aio-icon {
+        animation: hy-pulse 2s infinite ease-in-out;
+      }
+      #hy-aio-badge.hy-aio-collapsed:hover .hy-aio-icon {
+        animation: none;
+      }
+      @keyframes hy-pulse {
+        0%, 100% { opacity: 0.85; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.15); }
       }
       #hy-aio-badge .hy-aio-icon {
         font-size: 14px;
@@ -1757,6 +1787,40 @@
     }
   }
 
+  let badgeCollapseTimer = null;
+  let isBadgeHovered = false;
+  let hasElapsedInitialPeriod = false;
+
+  function scheduleBadgeCollapse(delay = 10000) {
+    if (badgeCollapseTimer) {
+      clearTimeout(badgeCollapseTimer);
+      badgeCollapseTimer = null;
+    }
+    hasElapsedInitialPeriod = false;
+    if (!badgeEl) return;
+
+    badgeEl.classList.remove('hy-aio-collapsed');
+
+    if (!config.autoCollapseBadge) return;
+
+    badgeCollapseTimer = setTimeout(() => {
+      hasElapsedInitialPeriod = true;
+      if (!isBadgeHovered) {
+        collapseBadge();
+      }
+    }, delay);
+  }
+
+  function collapseBadge() {
+    if (!badgeEl || !config.autoCollapseBadge) return;
+    badgeEl.classList.add('hy-aio-collapsed');
+  }
+
+  function uncollapseBadge() {
+    if (!badgeEl) return;
+    badgeEl.classList.remove('hy-aio-collapsed');
+  }
+
   function createBadge() {
     if (document.getElementById('hy-aio-badge')) return;
 
@@ -1772,8 +1836,21 @@
     `;
 
     badgeEl.addEventListener('click', () => openModal());
+
+    badgeEl.addEventListener('mouseenter', () => {
+      isBadgeHovered = true;
+    });
+
+    badgeEl.addEventListener('mouseleave', () => {
+      isBadgeHovered = false;
+      if (hasElapsedInitialPeriod && config.autoCollapseBadge) {
+        collapseBadge();
+      }
+    });
+
     (document.body || document.documentElement).appendChild(badgeEl);
     updateBadge();
+    scheduleBadgeCollapse(10000);
   }
 
   function createModal() {
@@ -1787,7 +1864,7 @@
         <div class="hy-aio-header">
           <div class="hy-aio-header-title">
             <span>⚡ 虎牙全能助手</span>
-            <span class="hy-aio-badge-tag">v3.0.0</span>
+            <span class="hy-aio-badge-tag">v3.2.0</span>
           </div>
           <button class="hy-aio-close-btn" id="hy-aio-close-btn" title="关闭 (Esc)">✕</button>
         </div>
@@ -2056,6 +2133,17 @@
 
             <div class="hy-aio-item">
               <div class="hy-aio-item-info">
+                <div class="hy-aio-item-title">⏱️ 10秒后自动靠边收起徽标</div>
+                <div class="hy-aio-item-desc">进入页面10秒后徽标自动贴紧屏幕右边缘收起，只留一个小头头；鼠标悬停时自动平滑滑出</div>
+              </div>
+              <label class="hy-aio-switch">
+                <input type="checkbox" id="hy-chk-autoCollapseBadge" ${config.autoCollapseBadge ? 'checked' : ''}>
+                <span class="hy-aio-slider"></span>
+              </label>
+            </div>
+
+            <div class="hy-aio-item">
+              <div class="hy-aio-item-info">
                 <div class="hy-aio-item-title">⌨️ 快捷操作说明</div>
                 <div class="hy-aio-item-desc">
                   • <b>Alt + H</b>：随时唤出 / 关闭本控制中心<br>
@@ -2069,7 +2157,7 @@
               <div class="hy-aio-item-info">
                 <div class="hy-aio-item-title">ℹ️ 脚本信息与开源协议</div>
                 <div class="hy-aio-item-desc">
-                  版本：<b>v3.0.0 (一体化全能整合版)</b><br>
+                  版本：<b>v3.2.0 (一体化全能整合版)</b><br>
                   开源仓库：<a href="https://github.com/guodonglu/tampermonkey-scripts" target="_blank" style="color:#ff9f43; text-decoration:none;">github.com/guodonglu/tampermonkey-scripts</a>
                 </div>
               </div>
@@ -2269,6 +2357,12 @@
     config.showQuickBtn = document.getElementById('hy-chk-quick-btn').checked;
     config.autoRedirect = document.getElementById('hy-chk-redirect').checked;
     config.showFloatBadge = document.getElementById('hy-chk-badge').checked;
+    config.autoCollapseBadge = document.getElementById('hy-chk-autoCollapseBadge').checked;
+    if (!config.autoCollapseBadge) {
+      uncollapseBadge();
+    } else {
+      scheduleBadgeCollapse(10000);
+    }
   }
 
   function syncModalInputs() {
@@ -2294,6 +2388,7 @@
     document.getElementById('hy-chk-quick-btn').checked = config.showQuickBtn;
     document.getElementById('hy-chk-redirect').checked = config.autoRedirect;
     document.getElementById('hy-chk-badge').checked = config.showFloatBadge;
+    document.getElementById('hy-chk-autoCollapseBadge').checked = !!config.autoCollapseBadge;
 
     switchTab(config.activeTab || 0);
     updateStreamerUIList();
@@ -2479,6 +2574,10 @@
       isCardBlocked,
       buildCSS,
       countBlockedElements,
+      scheduleBadgeCollapse,
+      collapseBadge,
+      uncollapseBadge,
+      getBadgeEl() { return badgeEl; },
       setBadgeUpdater(fn) { updateBadgeQuality = fn; },
       prepareInit() { injectStyles = () => {}; createBadge = () => {}; createModal = () => {}; }
     });
