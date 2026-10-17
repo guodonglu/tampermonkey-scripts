@@ -7,11 +7,12 @@
 
 ## ⚡ 脚本一键安装
 
-| 脚本名称 | 适用站点 | ⚡ 一键安装 | 📖 详细文档 | 版本 | 核心功能简介 |
+| 脚本类型 | 适用站点 | ⚡ 一键安装 | 📖 详细文档 | 版本 | 特点与说明 |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| **⭐ 虎牙全能助手** | `huya.com` | [点击一键安装](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js) | [查看详细文档](./huya-all-in-one/README.md) | `v3.1.0` | **三合一全功能整合**：免扫码解锁原画/蓝光画质、自动网页全屏观影、片头广告秒跳、聊天栏横幅清除（顶格铺满）、小黄车等营销挂件与水印屏蔽、按房间号/主播名彻底隐藏卡片与误入静音拦截。 |
+| **🚀 动态自动同步版 (强烈推荐)** | `huya.com` | [点击安装动态版](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.loader.user.js) | [查看详细文档](./huya-all-in-one/README.md) | `v1.0.0 (核心v3.1.0)` | **一次安装，永久最新**！每次打开页面自动拉取 GitHub 最新核心代码，本地 SWR 毫秒缓存秒开防闪屏，后续 GitHub 仓库更新自动静默同步，**无需手动重复更新插件**。 |
+| **📦 离线完整独立版** | `huya.com` | [点击安装离线版](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js) | [查看详细文档](./huya-all-in-one/README.md) | `v3.1.0` | **全内置单文件**：全套功能代码直接打包在脚本内，零外部网络拉取依赖；支持油猴标准自动检查更新。 |
 
-> 💡 **提示**：若浏览器已安装 Tampermonkey / Violentmonkey / ScriptCat，直接点击「**点击一键安装**」即可自动呼出安装界面。
+> 💡 **提示**：两个版本功能完全一致。如果不想每次 GitHub 提交后都手动去油猴插件里点更新，推荐直接安装「**🚀 动态自动同步版**」！两者二选一安装即可（请勿同时开启两个版本）。
 
 ---
 

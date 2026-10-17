@@ -7,10 +7,15 @@
 
 ## ⚡ 一键安装
 
-* **脚本安装地址**：[点击一键安装脚本](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js)
+您可以根据使用习惯选择以下两种安装方式之一（**二选一即可，请勿同时启用**）：
+
+| 版本类型 | 安装链接 | 适用场景与优势 |
+| :--- | :---: | :--- |
+| **🚀 动态自动同步版 (强烈推荐)** | [**点击一键安装动态版**](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.loader.user.js) | **一次安装，永久最新**！自动从 GitHub 实时同步最新核心代码。自带 SWR 本地毫秒级缓存，0 广告闪烁，GitHub 仓库更新后自动静默更新，**无需反复手动更新油猴插件**。 |
+| **📦 离线完整独立版** | [**点击一键安装离线版**](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js) | **单文件离线模式**：所有功能代码完整内嵌，不依赖任何外部加载。适合网络受限或偏好传统手动/定时更新机制的用户。 |
+
 * **适用扩展**：Tampermonkey (推荐) / Violentmonkey / ScriptCat
 * **适用站点**：`https://*.huya.com/*`
-* **版本**：`v3.1.0`
 
 ---
 

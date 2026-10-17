@@ -3,6 +3,8 @@
 // @name:en      Huya All-in-One Toolkit
 // @namespace    https://github.com/guodonglu/tampermonkey-scripts
 // @homepageURL  https://github.com/guodonglu/tampermonkey-scripts/tree/main/huya-all-in-one
+// @updateURL    https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js
+// @downloadURL  https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js
 // @icon         https://www.huya.com/favicon.ico
 // @version      3.1.0
 // @description  虎牙直播全功能一体化助手：免扫码解锁原画/蓝光画质、自动最高画质、网页全屏(观影模式)、毫秒级跳片头广告；全方位屏蔽商业横幅/挂件小黄车/二维码/水印；按房间号/主播名彻底屏蔽与卡片隐藏过滤。现代化多标签暗色毛玻璃控制中心与快捷悬浮徽标。

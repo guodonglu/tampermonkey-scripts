@@ -324,3 +324,117 @@ test('ad blocker: buildCSS generates valid css rules based on configuration', ()
   const cssWithoutWatermark = env.buildCSS();
   assert.ok(!cssWithoutWatermark.includes('#hy-watermark'));
 });
+
+// ==================== 动态加载器测试 ====================
+
+test('loader: valid metadata headers and parseable code structure', async () => {
+  const loaderSource = fs.readFileSync(`${__dirname}/huya-all-in-one.loader.user.js`, 'utf8');
+  assert.ok(loaderSource.includes('// ==UserScript=='));
+  assert.ok(loaderSource.includes('@name         虎牙全能助手 (GitHub 动态同步版)'));
+  assert.ok(loaderSource.includes('@grant        GM_xmlhttpRequest'));
+  assert.ok(loaderSource.includes('@grant        unsafeWindow'));
+  assert.ok(loaderSource.includes('@connect      raw.githubusercontent.com'));
+  assert.ok(loaderSource.includes('@updateURL'));
+  assert.ok(loaderSource.includes('@downloadURL'));
+  assert.ok(loaderSource.includes('STORAGE_KEY_CODE = \'hy_aio_cached_code\''));
+
+  // Ensure loader script evaluates cleanly in VM
+  const storage = new Map();
+  const menuCommands = new Map();
+  let requestedUrl = null;
+  const loaderContext = vm.createContext({
+    URL,
+    console: { log() {}, warn() {}, error() {} },
+    Date,
+    setTimeout(fn) { fn(); return 1; },
+    clearTimeout() {},
+    location: { reload() {}, href: 'https://www.huya.com/123' },
+    document: {
+      body: { appendChild() {} },
+      documentElement: { appendChild() {} },
+      createElement: () => ({ style: {}, classList: { add() {} }, remove() {} }),
+      addEventListener() {}
+    },
+    GM_getValue: (k, def) => (storage.has(k) ? storage.get(k) : def),
+    GM_setValue: (k, v) => { storage.set(k, v); },
+    GM_deleteValue: (k) => { storage.delete(k); },
+    GM_registerMenuCommand: (name, fn) => { menuCommands.set(name, fn); },
+    GM_xmlhttpRequest: ({ url, onload }) => {
+      requestedUrl = url;
+      Promise.resolve().then(() => {
+        onload({
+          status: 200,
+          responseText: `// ==UserScript==\n// @version 3.1.0\n// huya-all-in-one\n(function () { globalThis.__LOADER_TEST_EXECUTED__ = 123; })();`
+        });
+      });
+    }
+  });
+
+  vm.runInContext(loaderSource, loaderContext);
+
+  // Allow async promises inside loader to finish
+  for (let i = 0; i < 20; i++) {
+    await Promise.resolve();
+  }
+
+  assert.ok(requestedUrl.includes('raw.githubusercontent.com'));
+  assert.equal(storage.get('hy_aio_cached_version'), '3.1.0');
+  assert.ok(storage.get('hy_aio_cached_code').includes('__LOADER_TEST_EXECUTED__'));
+  assert.ok(menuCommands.has('⚡ 强制检查并同步 GitHub 最新代码'));
+});
+
+test('loader: SWR executes cached script synchronously before network returns', async () => {
+  const loaderSource = fs.readFileSync(`${__dirname}/huya-all-in-one.loader.user.js`, 'utf8');
+  const storage = new Map([
+    ['hy_aio_cached_code', `// ==UserScript==\n// @version 3.0.0\n// huya-all-in-one\n(function () { globalThis.__SWR_TEST_CACHED_SYNC__ = 'from_cache'; })();`],
+    ['hy_aio_cached_version', '3.0.0']
+  ]);
+  let networkFinished = false;
+
+  const loaderContext = vm.createContext({
+    URL,
+    console: { log() {}, warn() {}, error() {} },
+    Date,
+    setTimeout(fn) { fn(); return 1; },
+    clearTimeout() {},
+    location: { reload() {}, href: 'https://www.huya.com/123' },
+    document: {
+      body: { appendChild() {} },
+      documentElement: { appendChild() {} },
+      createElement: () => ({ style: {}, classList: { add() {} }, remove() {} }),
+      addEventListener() {}
+    },
+    GM_getValue: (k, def) => (storage.has(k) ? storage.get(k) : def),
+    GM_setValue: (k, v) => { storage.set(k, v); },
+    GM_deleteValue: (k) => { storage.delete(k); },
+    GM_registerMenuCommand: () => {},
+    GM_xmlhttpRequest: ({ onload }) => {
+      // Simulate network latency: returns later
+      Promise.resolve().then(() => {
+        networkFinished = true;
+        onload({
+          status: 200,
+          responseText: `// ==UserScript==\n// @version 3.1.0\n// huya-all-in-one\n(function () { globalThis.__SWR_TEST_NEW__ = 'from_remote'; })();`
+        });
+      });
+    }
+  });
+
+  // Run script
+  vm.runInContext(loaderSource, loaderContext);
+
+  // Cached code must have executed synchronously (0ms delay) BEFORE network returned
+  assert.equal(loaderContext.__SWR_TEST_CACHED_SYNC__, 'from_cache');
+  assert.equal(networkFinished, false);
+
+  // Now wait for network to finish
+  for (let i = 0; i < 20; i++) {
+    await Promise.resolve();
+  }
+
+  assert.equal(networkFinished, true);
+  // Cache has been updated in background
+  assert.equal(storage.get('hy_aio_cached_version'), '3.1.0');
+});
+
+
