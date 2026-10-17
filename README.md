@@ -8,9 +8,10 @@
 
 | 脚本名称 | 适用站点 | ⚡ 一键安装 | 📖 详细文档 | 版本 | 核心功能简介 |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| **虎牙画质优化与观影增强器** | `huya.com` | [点击一键安装](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-live-optimizer/huya-live-optimizer.user.js) | [查看说明](./huya-live-optimizer/README.md) | `v2.0.2` | 自动免扫码解锁原画/蓝光画质限制、切换最高/指定画质、自动进入观影模式（网页全屏）、毫秒级跳过片头广告、切台监听与毛玻璃设置面板。 |
-| **虎牙广告与干扰屏蔽器** | `huya.com` | [点击一键安装](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-ad-blocker/huya-ad-blocker.user.js) | [查看说明](./huya-ad-blocker/README.md) | `v1.0.0` | 彻底屏蔽聊天栏上方商业广告（聊天栏自动顶格铺满）、小黄车/互动插件等悬浮营销、APP下载二维码、首充百宝箱、视频水印等。 |
-| **虎牙主播屏蔽器** | `huya.com` | [点击一键安装](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-streamer-blocker/huya-streamer-blocker.user.js) | [查看说明](./huya-streamer-blocker/README.md) | `v1.3.0` | 支持房间号/链接/主播名彻底屏蔽隐藏卡片；误入拦截静音；仅列表页展示悬浮管理标签。 |
+| **⭐ 虎牙全能助手 (一体化整合版)** | `huya.com` | [点击一键安装](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js) | [查看说明](./huya-all-in-one/README.md) | `v3.0.0` | **三合一全功能整合**：画质免扫码解锁+自动全屏观影+毫秒跳广告+全方位去广告+主播黑名单过滤，提供多标签暗色毛玻璃控制中心与智能状态徽标。 |
+| **虎牙画质优化与观影增强器** | `huya.com` | [点击一键安装](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-live-optimizer/huya-live-optimizer.user.js) | [查看说明](./huya-live-optimizer/README.md) | `v2.0.4` | 自动免扫码解锁原画/蓝光画质限制、切换最高/指定画质、自动进入观影模式（网页全屏）、毫秒级跳过片头广告、切台监听与毛玻璃设置面板。 |
+| **虎牙广告与干扰屏蔽器** | `huya.com` | [点击一键安装](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-ad-blocker/huya-ad-blocker.user.js) | [查看说明](./huya-ad-blocker/README.md) | `v1.0.2` | 彻底屏蔽聊天栏上方商业广告（聊天栏自动顶格铺满）、小黄车/互动插件等悬浮营销、APP下载二维码、首充百宝箱、视频水印等。 |
+| **虎牙主播屏蔽器** | `huya.com` | [点击一键安装](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-streamer-blocker/huya-streamer-blocker.user.js) | [查看说明](./huya-streamer-blocker/README.md) | `v1.3.1` | 支持房间号/链接/主播名彻底屏蔽隐藏卡片；误入拦截静音；仅列表页展示悬浮管理标签。 |
 
 > 💡 **提示**：若浏览器已安装 Tampermonkey，直接点击「**点击一键安装**」即可自动弹出脚本安装界面。
 
@@ -18,7 +19,16 @@
 
 ## 🗂️ 脚本分类索引
 
-### 📺 1. 视频与直播增强类
+### 🌟 推荐首选：一体化全能整合脚本
+* **[⭐ 虎牙全能助手 (huya-all-in-one)](./huya-all-in-one/)**
+  * **主文件**：[`huya-all-in-one.user.js`](./huya-all-in-one/huya-all-in-one.user.js)
+  * **核心功能**：
+    * **三合一全功能整合**：集「画质解锁优化 + 全方位去广告 + 主播黑名单过滤」于一体，无需安装多个脚本。
+    * **统一暗色毛玻璃控制中心**：四标签分类设置（画质、广告、主播、偏好），快捷键 `Alt + H` 随时唤出。
+    * **智能双模状态胶囊徽标**：直播间实时显示当前画质与已过滤广告数，列表页实时显示已屏蔽主播数。
+    * **向下兼容**：无缝读取并同步旧版各个独立脚本的配置与黑名单数据。
+
+### 📺 1. 独立专项脚本
 * **[虎牙画质优化与观影增强器 (huya-live-optimizer)](./huya-live-optimizer/)**
   * **主文件**：[`huya-live-optimizer.user.js`](./huya-live-optimizer/huya-live-optimizer.user.js)
   * **核心功能**：
@@ -72,16 +82,22 @@ tampermonkey-scripts/
 ├── .gitignore                         # Git 忽略配置
 ├── README.md                          # 🧭 仓库导航与脚本总目录（本文档）
 │
-├── huya-live-optimizer/               # 脚本1：虎牙画质优化与观影增强器
+├── huya-all-in-one/                   # ⭐ 整合版：虎牙全能助手 (三合一一体化)
+│   ├── README.md                      # 全功能详细使用指引与快捷键说明
+│   ├── huya-all-in-one.user.js        # 一体化脚本源码 (.user.js)
+│   └── huya-all-in-one.test.cjs       # 自动化单元测试套件
+│
+├── huya-live-optimizer/               # 独立脚本1：虎牙画质优化与观影增强器
 │   ├── README.md                      # 脚本详细配置说明与图文指引
 │   ├── huya-live-optimizer.user.js    # 重构版优化器脚本源码 (.user.js)
+│   ├── huya-live-optimizer.test.cjs   # 画质与切台单元测试
 │   └── huya-live-optimizer.original.user.js # 原版脚本归档
 │
-├── huya-ad-blocker/                   # 脚本2：虎牙全方位广告屏蔽器
+├── huya-ad-blocker/                   # 独立脚本2：虎牙全方位广告屏蔽器
 │   ├── README.md                      # 脚本详细配置说明与图文指引
 │   └── huya-ad-blocker.user.js        # 脚本安装源码 (.user.js)
 │
-└── huya-streamer-blocker/             # 脚本3：虎牙主播屏蔽器
+└── huya-streamer-blocker/             # 独立脚本3：虎牙主播屏蔽器
     ├── README.md                      # 脚本详细配置说明与图文指引
     └── huya-streamer-blocker.user.js  # 脚本安装源码 (.user.js)
 ```
