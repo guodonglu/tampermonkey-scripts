@@ -4,7 +4,7 @@
 // @namespace    https://github.com/guodonglu/tampermonkey-scripts
 // @homepageURL  https://github.com/guodonglu/tampermonkey-scripts/tree/main/huya-all-in-one
 // @icon         https://www.huya.com/favicon.ico
-// @version      3.0.0
+// @version      3.1.0
 // @description  虎牙直播全功能一体化助手：免扫码解锁原画/蓝光画质、自动最高画质、网页全屏(观影模式)、毫秒级跳片头广告；全方位屏蔽商业横幅/挂件小黄车/二维码/水印；按房间号/主播名彻底屏蔽与卡片隐藏过滤。现代化多标签暗色毛玻璃控制中心与快捷悬浮徽标。
 // @author       guodonglu, mks155
 // @match        *://*.huya.com/*
@@ -228,7 +228,7 @@
   function buildCSS() {
     const rules = [];
 
-    // 1. 聊天栏上方商业广告横幅与顶格自适应
+    // 1. 聊天栏上方商业广告横幅、活动挂件与顶格自适应
     if (config.blockSidebarAd) {
       rules.push(`
         #J_roomSideTop,
@@ -237,7 +237,21 @@
         .room-sidebar-business,
         .match-room-ad,
         #huya-ab,
-        #huya-ab-fixed {
+        #huya-ab-fixed,
+        .chat-wrap-panel,
+        #wrap-income,
+        #wrap-ext,
+        #wrap-guide,
+        #wrap-notice,
+        #messageboard,
+        #J_bigStreamerStage,
+        iframe[src*="zt.huya.com"],
+        iframe[src*="activity"],
+        [class*="nobleDay"],
+        [class*="noble-crystal"],
+        #rank-shopping,
+        [data-key="11"],
+        .J_rankTabShopping {
           display: none !important;
           height: 0 !important;
           margin: 0 !important;
@@ -247,7 +261,7 @@
       `);
     }
 
-    // 2. 播放器悬浮营销挂件 & 互动插件
+    // 2. 播放器悬浮营销挂件、全屏送礼横幅、跑马灯 & 互动插件
     if (config.blockPlayerWidgets) {
       rules.push(`
         .diy-comps-wrap,
@@ -263,11 +277,21 @@
         .hy-video-ad,
         .hy-video-ad-box,
         #player-download-guide-tip,
-        #player-subscribe-pop {
+        #player-subscribe-pop,
+        .player-banner-gift,
+        [id*="player-banner-gift"],
+        [class*="player-banner-gift"],
+        .player-marquee,
+        .player-marquee-noble,
+        .player-marquee-noble-item,
+        [id*="player-marquee"],
+        #chatHostPic,
+        .chat-host-pic,
+        [class*="FanClub--"],
+        [class*="LogoGuide--"] {
           display: none !important;
           visibility: hidden !important;
           pointer-events: none !important;
-          width: 0 !important;
           height: 0 !important;
           opacity: 0 !important;
         }
@@ -286,7 +310,7 @@
       `);
     }
 
-    // 4. 宝箱与营销礼包入口
+    // 4. 宝箱与营销礼包入口、新客角标与优惠标识
     if (config.blockTreasureAndPresents) {
       rules.push(`
         #J_treasureChestContainer,
@@ -296,7 +320,12 @@
         .player-chest-btn,
         .tv-icon,
         .room-gift-banner,
-        .gift-marquee {
+        .gift-marquee,
+        #player-guard-btn img[src*="xinke"],
+        #player-guard-btn img[src*="qinmiduka"],
+        #recharge-discount-icon,
+        [id*="recharge-discount"],
+        .player-gift-tip {
           display: none !important;
           visibility: hidden !important;
         }
@@ -332,7 +361,7 @@
       `);
     }
 
-    // 7. 游戏推广与页尾推荐
+    // 7. 游戏推广、游戏推荐与页尾推荐
     if (config.blockBusinessGame) {
       rules.push(`
         .room-business-game,
@@ -341,7 +370,13 @@
         #sidebarBanner,
         .j_bannerItem,
         .room-footer,
-        .game-footer {
+        .game-footer,
+        .ab-icon,
+        .xsb-icon,
+        .player-gift-left .ab-icon,
+        .player-gift-left .xsb-icon,
+        .room-gamePromote,
+        #J_roomGamePromote {
           display: none !important;
           visibility: hidden !important;
         }
@@ -351,29 +386,45 @@
     // 8. 聊天室系统宣传长文与推广卡片
     if (config.blockChatRichAds) {
       rules.push(`
+        [class*="RoomMessageRichText"],
         .RoomMessageRichText--THUe1rNMNoESF9P60czw,
-        #chat-room__list > div[data-cmid="1"] {
+        #chat-room__list > div[data-cmid="1"],
+        #chat-room__list > div:has(.RoomMessageAnchorInfo--wMVFauvcImRo8_3tCbg0),
+        #chat-room__list .RoomMessageAnchorInfo--wMVFauvcImRo8_3tCbg0 {
           display: none !important;
+          height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
       `);
     }
 
-    // 9. 进场座驾广播
+    // 9. 进场座驾广播 (整行容器彻底移除)
     if (config.blockChatNobleEnter) {
       rules.push(`
+        #chat-room__list > div:has([class*="box-noble-level"]),
+        #chat-room__list > div:has([class*="msg--Zvl2tK76R5QFGf7YrGSb"]),
         #chat-room__list [class*="box-noble-level"],
         #chat-room__list [class*="msg--Zvl2tK76R5QFGf7YrGSb"] {
           display: none !important;
+          height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
       `);
     }
 
-    // 10. 小额送礼滚屏
+    // 10. 小额送礼滚屏 (整行容器彻底移除)
     if (config.blockChatGifts) {
       rules.push(`
+        #chat-room__list > div:has(.tit-h-send),
+        #chat-room__list > div:has([class*="msg-gift"]),
         #chat-room__list .tit-h-send,
         #chat-room__list [class*="msg-gift"] {
           display: none !important;
+          height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
       `);
     }
@@ -409,7 +460,9 @@
         '#diy-pet-icon', '.ext-sub-frame-wrap', '#J_treasureChestContainer',
         '#week-star-btn', '.player-app-qrcode', '#player-punch-btn',
         '#hy-watermark', '#room-hd-banner', '.room-business-game',
-        '.RoomMessageRichText--THUe1rNMNoESF9P60czw'
+        '.RoomMessageRichText--THUe1rNMNoESF9P60czw', '.chat-wrap-panel',
+        '#wrap-income', '.player-banner-gift', '.ab-icon', '#rank-shopping',
+        '#chatHostPic', '#recharge-discount-icon'
       ];
       let count = 0;
       selectors.forEach(sel => {
@@ -817,7 +870,7 @@
     let confirmedAt = null;
     let previousTarget = null;
     let targetQuality = '';
-    const label = el => (el?.textContent || '').replace(/\s+/g, '').replace(/扫码|解锁|限免|登录/g, '');
+    const label = el => (el?.textContent || '').replace(/\s+/g, '').replace(/扫码.*|即享|解锁|限免|登录|绑定/g, '').trim();
 
     while (Date.now() < deadline) {
       if (signal?.aborted) throw abortError();
@@ -1817,8 +1870,8 @@
           <div class="hy-aio-tab-pane" id="hy-pane-1">
             <div class="hy-aio-item">
               <div class="hy-aio-item-info">
-                <div class="hy-aio-item-title">💬 聊天栏上方商业横幅广告</div>
-                <div class="hy-aio-item-desc">彻底清除横幅大图广告，聊天列表自动向上顶格自适应伸展</div>
+                <div class="hy-aio-item-title">💬 聊天栏商业横幅与活动挂件</div>
+                <div class="hy-aio-item-desc">彻底清除横幅广告、活动挂件(贵族水晶/福利日iframe)与带货Tab，聊天区自动顶格铺满</div>
               </div>
               <label class="hy-aio-switch">
                 <input type="checkbox" id="hy-chk-blockSidebarAd" ${config.blockSidebarAd ? 'checked' : ''}>
@@ -1828,8 +1881,8 @@
 
             <div class="hy-aio-item">
               <div class="hy-aio-item-info">
-                <div class="hy-aio-item-title">🛒 播放器悬浮营销挂件 & 插件</div>
-                <div class="hy-aio-item-desc">屏蔽小黄车、上热门、甜蜜互动、更多活动、扩展 iframe 插件等</div>
+                <div class="hy-aio-item-title">🛒 播放器悬浮挂件、跑马灯与送礼横幅</div>
+                <div class="hy-aio-item-desc">屏蔽小黄车、更多活动、跨房送礼飞屏横幅、顶部跑马灯广播、输入框粉丝团徽标等</div>
               </div>
               <label class="hy-aio-switch">
                 <input type="checkbox" id="hy-chk-blockPlayerWidgets" ${config.blockPlayerWidgets ? 'checked' : ''}>
@@ -1850,8 +1903,8 @@
 
             <div class="hy-aio-item">
               <div class="hy-aio-item-info">
-                <div class="hy-aio-item-title">🎁 宝箱、首充礼包与百宝箱</div>
-                <div class="hy-aio-item-desc">隐藏浮动宝箱动画、周星打榜入口、礼物栏「首充礼包」与抽奖百宝箱</div>
+                <div class="hy-aio-item-title">🎁 宝箱、首充礼包与营销折扣</div>
+                <div class="hy-aio-item-desc">隐藏浮动宝箱、首充礼包、充值折扣、新客徽标与打榜入口</div>
               </div>
               <label class="hy-aio-switch">
                 <input type="checkbox" id="hy-chk-blockTreasureAndPresents" ${config.blockTreasureAndPresents ? 'checked' : ''}>
@@ -1883,8 +1936,8 @@
 
             <div class="hy-aio-item">
               <div class="hy-aio-item-info">
-                <div class="hy-aio-item-title">🎮 游戏商业推广与页尾推荐</div>
-                <div class="hy-aio-item-desc">清除右侧栏游戏推广小卡片与页面底部推荐</div>
+                <div class="hy-aio-item-title">🎮 游戏推广、游戏推荐与页尾广告</div>
+                <div class="hy-aio-item-desc">清除播放器下方「游戏推荐」按钮、右侧栏游戏推广小卡片与页面底部推荐</div>
               </div>
               <label class="hy-aio-switch">
                 <input type="checkbox" id="hy-chk-blockBusinessGame" ${config.blockBusinessGame ? 'checked' : ''}>

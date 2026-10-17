@@ -10,7 +10,7 @@
 * **脚本安装地址**：[点击一键安装脚本](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js)
 * **适用扩展**：Tampermonkey (推荐) / Violentmonkey / ScriptCat
 * **适用站点**：`https://*.huya.com/*`
-* **版本**：`v3.0.0`
+* **版本**：`v3.1.0`
 
 ---
 
