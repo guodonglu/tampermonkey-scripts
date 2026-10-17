@@ -6,8 +6,8 @@
 // @updateURL    https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js
 // @downloadURL  https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js
 // @icon         https://www.huya.com/favicon.ico
-// @version      3.2.0
-// @description  虎牙直播全功能一体化助手：免扫码解锁原画/蓝光画质、自动最高画质、网页全屏(观影模式)、毫秒级跳片头广告；全方位屏蔽商业横幅/挂件小黄车/二维码/水印；按房间号/主播名彻底屏蔽与卡片隐藏过滤。现代化多标签暗色毛玻璃控制中心与快捷悬浮徽标。
+// @version      3.3.0
+// @description  虎牙直播全功能一体化助手：免扫码解锁原画/蓝光画质、自动最高画质、网页全屏(观影模式)、毫秒级跳片头广告；全方位屏蔽商业横幅/挂件小黄车/二维码/水印/底部礼物栏/互动榜单；可自由拖拽调整聊天栏宽度；按房间号/主播名彻底屏蔽与卡片隐藏过滤。现代化多标签暗色毛玻璃控制中心与快捷悬浮徽标。
 // @author       guodonglu, mks155
 // @match        *://*.huya.com/*
 // @grant        unsafeWindow
@@ -31,6 +31,7 @@
   const STORAGE_KEY_ADBLOCK = 'hy_adblock_config_v1';
   const STORAGE_KEY_STREAMER_CONFIG = 'hy_blocker_config_v1';
   const STORAGE_KEY_STREAMER_LIST = 'hy_blocked_streamers_v1';
+  const STORAGE_KEY_SIDEBAR_WIDTH = 'hy_sidebar_width_v1';
 
   const DEFAULT_CONFIG = {
     // 1. 画质与观影增强
@@ -46,6 +47,8 @@
     blockPlayerWidgets: true,       // 播放器悬浮营销挂件（小黄车、更多活动、互动插件等）
     blockPlayerQrcode: true,        // 播放器左下角APP下载二维码与吉祥物
     blockTreasureAndPresents: true, // 浮动宝箱、周星榜、首充礼包、百宝箱
+    blockPlayerGiftBar: true,       // 播放器底部赠礼与互动栏 (图二：充值/包裹/守护/贵族/礼物栏)
+    blockChatRankList: true,        // 聊天区顶部榜单与互动栏 (图三：互动/超粉/守护/贵宾榜)
     blockWatermark: true,           // 播放器画面水印（虎牙Logo）
     blockTopBanners: true,          // 顶部背景头图广告与活动横幅
     blockBusinessGame: true,        // 游戏推广、分类页商业横幅与页尾推荐
@@ -431,6 +434,79 @@
         }
       `);
     }
+
+    // 11. 播放器底部赠礼与互动栏 (图二)
+    if (config.blockPlayerGiftBar) {
+      rules.push(`
+        #player-gift-wrap,
+        .player-gift-wrap,
+        .room-player-gift,
+        .player-gift-left,
+        .player-gift-right {
+          display: none !important;
+          height: 0 !important;
+          visibility: hidden !important;
+        }
+        .room-core-l #player-wrap {
+          height: 100% !important;
+        }
+      `);
+    }
+
+    // 12. 聊天区顶部榜单与互动栏 (图三)
+    if (config.blockChatRankList) {
+      rules.push(`
+        #J_roomSideHd,
+        .room-sidebar-hd {
+          display: none !important;
+          height: 0 !important;
+          visibility: hidden !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+      `);
+    }
+
+    // 13. 聊天输入框布局美化与空隙修复 (图四)
+    rules.push(`
+      .chat-room__ft__chat {
+        border-radius: 6px !important;
+        overflow: hidden !important;
+        border: 1px solid rgba(255, 168, 0, 0.45) !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+      }
+      .chat-room__ft__chat:focus-within {
+        border-color: #ff9f43 !important;
+        box-shadow: 0 0 0 2px rgba(255, 159, 67, 0.25) !important;
+      }
+      .chat-room__input {
+        margin-left: 0 !important;
+        width: 100% !important;
+      }
+      .chat-room__input .chat-speaker {
+        width: calc(100% - 64px) !important;
+      }
+      .chat-room__input .chat-speaker textarea,
+      #pub_msg_input {
+        width: 100% !important;
+        padding: 8px 10px !important;
+        resize: none !important;
+        border: none !important;
+        outline: none !important;
+        font-size: 13px !important;
+        line-height: 1.4 !important;
+        box-sizing: border-box !important;
+      }
+      .chat-room__input .btn-sendMsg,
+      #msg_send_bt {
+        right: 0 !important;
+        left: auto !important;
+        width: 64px !important;
+        height: 100% !important;
+        border-radius: 0 5px 5px 0 !important;
+        font-weight: 600 !important;
+      }
+    `);
 
     return rules.join('\n');
   }
@@ -1117,6 +1193,7 @@
     updateBadge();
     uncollapseBadge();
     scheduleBadgeCollapse(10000);
+    initSidebarResizer();
 
     if (!config.watchNavigation) return;
     navigationTimer = setTimeout(() => {
@@ -1993,6 +2070,28 @@
 
             <div class="hy-aio-item">
               <div class="hy-aio-item-info">
+                <div class="hy-aio-item-title">🎁 播放器底部赠礼与互动栏</div>
+                <div class="hy-aio-item-desc">彻底清除播放器下方整条互动栏（充值/包裹/守护/贵族/礼物），视频画面垂直100%全铺满</div>
+              </div>
+              <label class="hy-aio-switch">
+                <input type="checkbox" id="hy-chk-blockPlayerGiftBar" ${config.blockPlayerGiftBar ? 'checked' : ''}>
+                <span class="hy-aio-slider"></span>
+              </label>
+            </div>
+
+            <div class="hy-aio-item">
+              <div class="hy-aio-item-info">
+                <div class="hy-aio-item-title">🏆 聊天区顶部榜单与互动栏</div>
+                <div class="hy-aio-item-desc">彻底清除聊天室上方的互动/超粉/守护/贵宾榜单与排行区域，聊天区自动向上完全顶格伸展</div>
+              </div>
+              <label class="hy-aio-switch">
+                <input type="checkbox" id="hy-chk-blockChatRankList" ${config.blockChatRankList ? 'checked' : ''}>
+                <span class="hy-aio-slider"></span>
+              </label>
+            </div>
+
+            <div class="hy-aio-item">
+              <div class="hy-aio-item-info">
                 <div class="hy-aio-item-title">💧 播放器虎牙Logo水印</div>
                 <div class="hy-aio-item-desc">屏蔽右上角常驻官方水印，画面100%纯净原画呈现</div>
               </div>
@@ -2346,6 +2445,8 @@
     config.blockPlayerWidgets = document.getElementById('hy-chk-blockPlayerWidgets').checked;
     config.blockPlayerQrcode = document.getElementById('hy-chk-blockPlayerQrcode').checked;
     config.blockTreasureAndPresents = document.getElementById('hy-chk-blockTreasureAndPresents').checked;
+    config.blockPlayerGiftBar = document.getElementById('hy-chk-blockPlayerGiftBar').checked;
+    config.blockChatRankList = document.getElementById('hy-chk-blockChatRankList').checked;
     config.blockWatermark = document.getElementById('hy-chk-blockWatermark').checked;
     config.blockTopBanners = document.getElementById('hy-chk-blockTopBanners').checked;
     config.blockBusinessGame = document.getElementById('hy-chk-blockBusinessGame').checked;
@@ -2377,6 +2478,8 @@
     document.getElementById('hy-chk-blockPlayerWidgets').checked = config.blockPlayerWidgets;
     document.getElementById('hy-chk-blockPlayerQrcode').checked = config.blockPlayerQrcode;
     document.getElementById('hy-chk-blockTreasureAndPresents').checked = config.blockTreasureAndPresents;
+    document.getElementById('hy-chk-blockPlayerGiftBar').checked = config.blockPlayerGiftBar;
+    document.getElementById('hy-chk-blockChatRankList').checked = config.blockChatRankList;
     document.getElementById('hy-chk-blockWatermark').checked = config.blockWatermark;
     document.getElementById('hy-chk-blockTopBanners').checked = config.blockTopBanners;
     document.getElementById('hy-chk-blockBusinessGame').checked = config.blockBusinessGame;
@@ -2461,7 +2564,146 @@
   }
 
   // =========================================================================
-  // 7. 油猴菜单命令与初始化入口 (Menu Commands & Bootstrap)
+  // 7. 侧边栏宽度自定义拖拽调节 (Resizable Chat Sidebar)
+  // =========================================================================
+  function applySidebarWidth(width) {
+    if (typeof document === 'undefined') return;
+    const coreL = document.querySelector('.room-core-l');
+    const coreR = document.querySelector('.room-core-r');
+    if (!coreL || !coreR) return;
+
+    if (width && width >= 200) {
+      coreR.style.setProperty('width', width + 'px', 'important');
+      coreL.style.setProperty('margin-right', (width + 10) + 'px', 'important');
+    } else {
+      coreR.style.removeProperty('width');
+      coreL.style.removeProperty('margin-right');
+    }
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      window.dispatchEvent(new Event('resize'));
+    }
+  }
+
+  function initSidebarResizer() {
+    if (typeof document === 'undefined' || typeof document.querySelector !== 'function') return;
+    if (!isLiveRoom()) return;
+
+    const coreR = document.querySelector('.room-core-r');
+    const coreL = document.querySelector('.room-core-l');
+    if (!coreR || !coreL) return;
+
+    // 恢复已保存的自定义宽度
+    const savedWidth = getStorage(STORAGE_KEY_SIDEBAR_WIDTH, 0);
+    if (savedWidth) {
+      applySidebarWidth(savedWidth);
+    }
+
+    if (document.getElementById('hy-sidebar-resizer')) return;
+
+    const resizer = document.createElement('div');
+    resizer.id = 'hy-sidebar-resizer';
+    resizer.title = '双击恢复默认宽度，按住左右拖动调整聊天栏宽度';
+    resizer.style.cssText = `
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -6px;
+      width: 12px;
+      cursor: col-resize;
+      z-index: 99999;
+      background: transparent;
+      user-select: none;
+    `;
+
+    const line = document.createElement('div');
+    line.style.cssText = `
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 5px;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.15);
+      transition: all 0.2s ease;
+    `;
+    resizer.appendChild(line);
+
+    let isDragging = false;
+    let startX = 0;
+    let startWidth = 0;
+
+    resizer.addEventListener('mouseenter', () => {
+      line.style.background = '#ff9f43';
+      line.style.boxShadow = '0 0 8px rgba(255, 159, 67, 0.6)';
+      line.style.width = '3px';
+    });
+
+    resizer.addEventListener('mouseleave', () => {
+      if (!isDragging) {
+        line.style.background = 'rgba(255, 255, 255, 0.15)';
+        line.style.boxShadow = 'none';
+        line.style.width = '2px';
+      }
+    });
+
+    resizer.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      startX = e.clientX;
+      startWidth = coreR.offsetWidth;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+
+      let rafId = null;
+      const onMouseMove = (ev) => {
+        if (!isDragging) return;
+        const deltaX = startX - ev.clientX;
+        const winW = typeof window !== 'undefined' ? window.innerWidth : 1920;
+        const maxW = Math.floor(winW * 0.65);
+        const newW = Math.max(220, Math.min(maxW, startWidth + deltaX));
+
+        coreR.style.setProperty('width', newW + 'px', 'important');
+        coreL.style.setProperty('margin-right', (newW + 10) + 'px', 'important');
+
+        if (!rafId && typeof requestAnimationFrame === 'function') {
+          rafId = requestAnimationFrame(() => {
+            window.dispatchEvent(new Event('resize'));
+            rafId = null;
+          });
+        }
+      };
+
+      const onMouseUp = () => {
+        isDragging = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        line.style.background = 'rgba(255, 255, 255, 0.15)';
+        line.style.boxShadow = 'none';
+        line.style.width = '2px';
+
+        const finalWidth = coreR.offsetWidth;
+        setStorage(STORAGE_KEY_SIDEBAR_WIDTH, finalWidth);
+        if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+          window.dispatchEvent(new Event('resize'));
+        }
+      };
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+
+    resizer.addEventListener('dblclick', () => {
+      setStorage(STORAGE_KEY_SIDEBAR_WIDTH, 0);
+      applySidebarWidth(0);
+      showToast('聊天栏已恢复默认宽度');
+    });
+
+    coreR.appendChild(resizer);
+  }
+
+  // =========================================================================
+  // 8. 油猴菜单命令与初始化入口 (Menu Commands & Bootstrap)
   // =========================================================================
   function registerMenuCommands() {
     if (typeof GM_registerMenuCommand !== 'function') return;
@@ -2511,6 +2753,7 @@
     const onDomReady = () => {
       createBadge();
       createModal();
+      initSidebarResizer();
 
       // 在详情页运行优化流程，在列表页运行卡片过滤
       if (isLiveRoom()) {
@@ -2532,6 +2775,7 @@
           applyStreamerFilter();
           checkAndInterceptRoom();
           updateBadge();
+          initSidebarResizer();
         }, delay);
       });
 
@@ -2578,6 +2822,8 @@
       collapseBadge,
       uncollapseBadge,
       getBadgeEl() { return badgeEl; },
+      applySidebarWidth,
+      initSidebarResizer,
       setBadgeUpdater(fn) { updateBadgeQuality = fn; },
       prepareInit() { injectStyles = () => {}; createBadge = () => {}; createModal = () => {}; }
     });

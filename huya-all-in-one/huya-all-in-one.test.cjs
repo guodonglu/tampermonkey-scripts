@@ -319,10 +319,50 @@ test('ad blocker: buildCSS generates valid css rules based on configuration', ()
   assert.ok(css.includes('#J_roomSideTop'));
   assert.ok(css.includes('.diy-comps-wrap'));
   assert.ok(css.includes('#hy-watermark'));
+  assert.ok(css.includes('#player-gift-wrap'));
+  assert.ok(css.includes('#J_roomSideHd'));
+  assert.ok(css.includes('.chat-room__input'));
 
   env.config.blockWatermark = false;
-  const cssWithoutWatermark = env.buildCSS();
-  assert.ok(!cssWithoutWatermark.includes('#hy-watermark'));
+  env.config.blockPlayerGiftBar = false;
+  env.config.blockChatRankList = false;
+  const cssWithout = env.buildCSS();
+  assert.ok(!cssWithout.includes('#hy-watermark'));
+  assert.ok(!cssWithout.includes('#player-gift-wrap'));
+  assert.ok(!cssWithout.includes('#J_roomSideHd'));
+});
+
+test('sidebar resizer: applySidebarWidth updates coreR width and coreL margin-right', () => {
+  const env = setup();
+  const coreLStyle = new Map();
+  const coreRStyle = new Map();
+
+  const coreL = {
+    style: {
+      setProperty(k, v) { coreLStyle.set(k, v); },
+      removeProperty(k) { coreLStyle.delete(k); }
+    }
+  };
+  const coreR = {
+    style: {
+      setProperty(k, v) { coreRStyle.set(k, v); },
+      removeProperty(k) { coreRStyle.delete(k); }
+    }
+  };
+
+  env.context.document.querySelector = (sel) => {
+    if (sel === '.room-core-l') return coreL;
+    if (sel === '.room-core-r') return coreR;
+    return null;
+  };
+
+  env.applySidebarWidth(450);
+  assert.equal(coreRStyle.get('width'), '450px');
+  assert.equal(coreLStyle.get('margin-right'), '460px');
+
+  env.applySidebarWidth(0);
+  assert.equal(coreRStyle.has('width'), false);
+  assert.equal(coreLStyle.has('margin-right'), false);
 });
 
 // ==================== 动态加载器测试 ====================

@@ -9,8 +9,8 @@
 
 | 脚本类型 | 适用站点 | ⚡ 一键安装 | 📖 详细文档 | 版本 | 特点与说明 |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| **🚀 动态自动同步版 (强烈推荐)** | `huya.com` | [点击安装动态版](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.loader.user.js) | [查看详细文档](./huya-all-in-one/README.md) | `v1.0.0 (核心v3.2.0)` | **一次安装，永久最新**！每次打开页面自动拉取 GitHub 最新核心代码，本地 SWR 毫秒缓存秒开防闪屏，后续 GitHub 仓库更新自动静默同步，**无需手动重复更新插件**。 |
-| **📦 离线完整独立版** | `huya.com` | [点击安装离线版](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js) | [查看详细文档](./huya-all-in-one/README.md) | `v3.2.0` | **全内置单文件**：全套功能代码直接打包在脚本内，零外部网络拉取依赖；支持油猴标准自动检查更新。 |
+| **🚀 动态自动同步版 (强烈推荐)** | `huya.com` | [点击安装动态版](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.loader.user.js) | [查看详细文档](./huya-all-in-one/README.md) | `v1.0.0 (核心v3.3.0)` | **一次安装，永久最新**！每次打开页面自动拉取 GitHub 最新核心代码，本地 SWR 毫秒缓存秒开防闪屏，后续 GitHub 仓库更新自动静默同步，**无需手动重复更新插件**。 |
+| **📦 离线完整独立版** | `huya.com` | [点击安装离线版](https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js) | [查看详细文档](./huya-all-in-one/README.md) | `v3.3.0` | **全内置单文件**：全套功能代码直接打包在脚本内，零外部网络拉取依赖；支持油猴标准自动检查更新。 |
 
 > 💡 **提示**：两个版本功能完全一致。如果不想每次 GitHub 提交后都手动去油猴插件里点更新，推荐直接安装「**🚀 动态自动同步版**」！两者二选一安装即可（请勿同时开启两个版本）。
 
@@ -27,6 +27,9 @@
 
 ### 🛡️ 2. 全方位广告与干扰元素净化
 * **💬 聊天栏商业横幅清除**：彻底消除聊天栏上方的商业大图横幅（如麦当劳等），聊天列表**自动向上顶格自适应伸展铺满**。
+* **🎁 底部礼物互动栏移除（100%全高画面）**：屏蔽播放器下方的充值、包裹、守护、贵族与礼物整条栏位，播放器画面垂直 100% 顶天立地全铺满。
+* **🏆 聊天顶部互动与粉丝榜清除**：屏蔽聊天栏上方的互动、超粉、守护、贵宾标签与榜单区域，聊天消息列表向上额外多展示 6-8 行纯粹弹幕。
+* **✨ 输入框布局美化与空隙修复**：修复隐藏粉丝徽标后留下的多余左侧空白，输入框与「发送」按钮全宽对齐，橙黄色微光聚焦。
 * **🛒 播放器悬浮营销挂件全屏蔽**：全面清理小黄车、上热门、甜蜜互动、更多活动、扩展 iframe 小程序等画面遮挡物。
 * **📱 APP 下载二维码与吉祥物拦截**：隐藏左下角黄脸吉祥物及「下载虎牙直播APP」常驻二维码。
 * **🎁 充值诱导与营销活动清除**：屏蔽浮动百宝箱、首充礼包、周星榜、抽奖转盘等营销入口。
