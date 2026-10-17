@@ -532,5 +532,74 @@ test('badge: auto-collapses after 10 seconds and uncollapses on new room navigat
   assert.equal(badge.classList.contains('hy-aio-collapsed'), true);
 });
 
+test('ad blocker: control bar styles prevent jump and support auto-hide', () => {
+  const env = setup();
+
+  // 1. autoHidePlayerControl = true
+  env.config.autoHidePlayerControl = true;
+  const cssWithAutoHide = env.buildCSS();
+  assert.ok(cssWithAutoHide.includes('#player-ctrl-wrap'));
+  assert.ok(cssWithAutoHide.includes('bottom: 0px !important;'));
+  assert.ok(cssWithAutoHide.includes('hy-ctrl-active'));
+  assert.ok(cssWithAutoHide.includes('translateY(calc(100% + 15px))'));
+
+  // 2. autoHidePlayerControl = false: still locks bottom to 0 to prevent 60px jump
+  env.config.autoHidePlayerControl = false;
+  const cssWithoutAutoHide = env.buildCSS();
+  assert.ok(cssWithoutAutoHide.includes('#player-ctrl-wrap'));
+  assert.ok(cssWithoutAutoHide.includes('bottom: 0px !important;'));
+  assert.equal(cssWithoutAutoHide.includes('hy-ctrl-active'), false);
+});
+
+test('control bar: auto-hide activates when mouse is at the bottom of player and hides after leaving', async () => {
+  const env = setup();
+  const ctrlClasses = new Set();
+  const mockCtrl = {
+    id: 'player-ctrl-wrap',
+    classList: {
+      add(c) { ctrlClasses.add(c); },
+      remove(c) { ctrlClasses.delete(c); },
+      contains(c) { return ctrlClasses.has(c); }
+    }
+  };
+  const mockPlayerWrap = {
+    getBoundingClientRect() {
+      return { left: 0, right: 1000, top: 0, bottom: 800 };
+    }
+  };
+
+  env.context.document.querySelector = (sel) => {
+    if (sel === '#player-ctrl-wrap') return mockCtrl;
+    if (sel === '#player-wrap' || sel === '#videoContainer' || sel === '#player-video') return mockPlayerWrap;
+    return null;
+  };
+
+  env.config.autoHidePlayerControl = true;
+  env.initPlayerControlAutoHide();
+
+  // Mouse move in middle of screen (x: 500, y: 400) -> should NOT activate
+  env.events['mousemove']({ clientX: 500, clientY: 400, target: {} });
+  assert.equal(ctrlClasses.has('hy-ctrl-active'), false);
+
+  // Mouse move near bottom of player (x: 500, y: 760 -> within 85px of bottom: 800) -> should activate
+  env.events['mousemove']({ clientX: 500, clientY: 760, target: {} });
+  assert.equal(ctrlClasses.has('hy-ctrl-active'), true);
+
+  // Mouse moves back to middle of screen -> delayed hide after 260ms
+  env.events['mousemove']({ clientX: 500, clientY: 400, target: {} });
+  assert.equal(ctrlClasses.has('hy-ctrl-active'), true); // Still active before timeout
+
+  await env.tick(300);
+  assert.equal(ctrlClasses.has('hy-ctrl-active'), false); // Removed after timeout
+
+  // Mouse enters control bar itself -> immediately active
+  env.events['mousemove']({ clientX: 100, clientY: 100, target: { closest: (s) => (s === '#player-ctrl-wrap' ? mockCtrl : null) } });
+  assert.equal(ctrlClasses.has('hy-ctrl-active'), true);
+
+  // Mouse leaves window -> immediately inactive
+  env.events['mouseleave']();
+  assert.equal(ctrlClasses.has('hy-ctrl-active'), false);
+});
+
 
 

@@ -6,8 +6,8 @@
 // @updateURL    https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js
 // @downloadURL  https://raw.githubusercontent.com/guodonglu/tampermonkey-scripts/main/huya-all-in-one/huya-all-in-one.user.js
 // @icon         https://www.huya.com/favicon.ico
-// @version      3.3.0
-// @description  虎牙直播全功能一体化助手：免扫码解锁原画/蓝光画质、自动最高画质、网页全屏(观影模式)、毫秒级跳片头广告；全方位屏蔽商业横幅/挂件小黄车/二维码/水印/底部礼物栏/互动榜单；可自由拖拽调整聊天栏宽度；按房间号/主播名彻底屏蔽与卡片隐藏过滤。现代化多标签暗色毛玻璃控制中心与快捷悬浮徽标。
+// @version      3.4.0
+// @description  虎牙直播全功能一体化助手：免扫码解锁原画/蓝光画质、自动最高画质、网页全屏(观影模式)、毫秒级跳片头广告；全方位屏蔽商业横幅/挂件小黄车/二维码/水印/底部礼物栏/互动榜单；可自由拖拽调整聊天栏宽度；控制栏仅滑动到底部显示并防hover上移；按房间号/主播名彻底屏蔽与卡片隐藏过滤。现代化多标签暗色毛玻璃控制中心与快捷悬浮徽标。
 // @author       guodonglu, mks155
 // @match        *://*.huya.com/*
 // @grant        unsafeWindow
@@ -49,6 +49,7 @@
     blockTreasureAndPresents: true, // 浮动宝箱、周星榜、首充礼包、百宝箱
     blockPlayerGiftBar: true,       // 播放器底部赠礼与互动栏 (图二：充值/包裹/守护/贵族/礼物栏)
     blockChatRankList: true,        // 聊天区顶部榜单与互动栏 (图三：互动/超粉/守护/贵宾榜)
+    autoHidePlayerControl: true,    // 播放器控制栏优化：滑动到底部才显示，杜绝hover直播画面时上移与遮挡
     blockWatermark: true,           // 播放器画面水印（虎牙Logo）
     blockTopBanners: true,          // 顶部背景头图广告与活动横幅
     blockBusinessGame: true,        // 游戏推广、分类页商业横幅与页尾推荐
@@ -127,6 +128,9 @@
       blockPlayerWidgets: config.blockPlayerWidgets,
       blockPlayerQrcode: config.blockPlayerQrcode,
       blockTreasureAndPresents: config.blockTreasureAndPresents,
+      blockPlayerGiftBar: config.blockPlayerGiftBar,
+      blockChatRankList: config.blockChatRankList,
+      autoHidePlayerControl: config.autoHidePlayerControl,
       blockWatermark: config.blockWatermark,
       blockTopBanners: config.blockTopBanners,
       blockBusinessGame: config.blockBusinessGame,
@@ -507,6 +511,44 @@
         font-weight: 600 !important;
       }
     `);
+
+    // 14. 播放器底部控制条优化 (防hover上移 + 仅滑动到底部时显示)
+    if (config.autoHidePlayerControl) {
+      rules.push(`
+        /* 彻底消除上移：强制将控制条与进度条锁定在视频底端 (0px)，杜绝hover直播画面时跳到 60px 悬空 */
+        body #player-ctrl-wrap,
+        #videoContainer #player-ctrl-wrap {
+          bottom: 0px !important;
+          margin-bottom: 0 !important;
+          transition: opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1), transform 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        /* 鼠标未触达底部热区时，全透明收起隐藏，保证画面纯净不遮挡 */
+        body #player-ctrl-wrap:not(.hy-ctrl-active) {
+          opacity: 0 !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+          transform: translateY(calc(100% + 15px)) !important;
+        }
+
+        /* 鼠标滑到底部热区时平滑展开 */
+        body #player-ctrl-wrap.hy-ctrl-active {
+          opacity: 1 !important;
+          visibility: visible !important;
+          pointer-events: auto !important;
+          transform: translateY(0) !important;
+        }
+      `);
+    } else {
+      // 即使未开启底部滑入收起，也锁定 bottom: 0，杜绝 hover 画面时跳到 60px 悬空
+      rules.push(`
+        body #player-ctrl-wrap,
+        #videoContainer #player-ctrl-wrap {
+          bottom: 0px !important;
+          margin-bottom: 0 !important;
+        }
+      `);
+    }
 
     return rules.join('\n');
   }
@@ -1194,6 +1236,7 @@
     uncollapseBadge();
     scheduleBadgeCollapse(10000);
     initSidebarResizer();
+    initPlayerControlAutoHide();
 
     if (!config.watchNavigation) return;
     navigationTimer = setTimeout(() => {
@@ -2092,6 +2135,17 @@
 
             <div class="hy-aio-item">
               <div class="hy-aio-item-info">
+                <div class="hy-aio-item-title">🎛️ 控制栏优化：滑动到底部显示 (防hover上移)</div>
+                <div class="hy-aio-item-desc">仅在鼠标滑动到播放器底部时展开控制条，彻底杜绝hover画面时的上移跳动与多余遮挡</div>
+              </div>
+              <label class="hy-aio-switch">
+                <input type="checkbox" id="hy-chk-autoHidePlayerControl" ${config.autoHidePlayerControl ? 'checked' : ''}>
+                <span class="hy-aio-slider"></span>
+              </label>
+            </div>
+
+            <div class="hy-aio-item">
+              <div class="hy-aio-item-info">
                 <div class="hy-aio-item-title">💧 播放器虎牙Logo水印</div>
                 <div class="hy-aio-item-desc">屏蔽右上角常驻官方水印，画面100%纯净原画呈现</div>
               </div>
@@ -2447,6 +2501,7 @@
     config.blockTreasureAndPresents = document.getElementById('hy-chk-blockTreasureAndPresents').checked;
     config.blockPlayerGiftBar = document.getElementById('hy-chk-blockPlayerGiftBar').checked;
     config.blockChatRankList = document.getElementById('hy-chk-blockChatRankList').checked;
+    config.autoHidePlayerControl = document.getElementById('hy-chk-autoHidePlayerControl').checked;
     config.blockWatermark = document.getElementById('hy-chk-blockWatermark').checked;
     config.blockTopBanners = document.getElementById('hy-chk-blockTopBanners').checked;
     config.blockBusinessGame = document.getElementById('hy-chk-blockBusinessGame').checked;
@@ -2480,6 +2535,7 @@
     document.getElementById('hy-chk-blockTreasureAndPresents').checked = config.blockTreasureAndPresents;
     document.getElementById('hy-chk-blockPlayerGiftBar').checked = config.blockPlayerGiftBar;
     document.getElementById('hy-chk-blockChatRankList').checked = config.blockChatRankList;
+    document.getElementById('hy-chk-autoHidePlayerControl').checked = !!config.autoHidePlayerControl;
     document.getElementById('hy-chk-blockWatermark').checked = config.blockWatermark;
     document.getElementById('hy-chk-blockTopBanners').checked = config.blockTopBanners;
     document.getElementById('hy-chk-blockBusinessGame').checked = config.blockBusinessGame;
@@ -2703,6 +2759,71 @@
   }
 
   // =========================================================================
+  // 7. 播放器控制栏优化 (仅滑动到底部显示 + 防hover上移)
+  // =========================================================================
+  function initPlayerControlAutoHide() {
+    if (typeof document === 'undefined' || typeof document.querySelector !== 'function') return;
+    if (typeof window === 'undefined') return;
+    if (!isLiveRoom()) return;
+
+    if (window.__hyCtrlAutoHideInited) return;
+    window.__hyCtrlAutoHideInited = true;
+
+    let hideTimer = null;
+
+    function getPlayerWrap() {
+      return document.querySelector('#player-wrap') || document.querySelector('#videoContainer') || document.querySelector('#player-video');
+    }
+
+    function onMouseMove(e) {
+      if (!config.autoHidePlayerControl) return;
+      const ctrl = document.querySelector('#player-ctrl-wrap');
+      if (!ctrl) return;
+
+      const player = getPlayerWrap();
+      if (!player) return;
+
+      const rect = player.getBoundingClientRect();
+      const inHoriz = e.clientX >= rect.left && e.clientX <= rect.right;
+      // 鼠标在播放器底部 85px 垂直热区内 (覆盖控制条44px以及上方操作余量)
+      const inBottomZone = inHoriz && (e.clientY >= rect.bottom - 85 && e.clientY <= rect.bottom + 20);
+      // 鼠标正悬停在控制条自身或其中的弹窗菜单内部 (如清晰度列表、音量调节面板、弹幕设置等)
+      const overCtrl = !!(e.target && e.target.closest && e.target.closest('#player-ctrl-wrap'));
+
+      if (inBottomZone || overCtrl) {
+        if (hideTimer) {
+          clearTimeout(hideTimer);
+          hideTimer = null;
+        }
+        if (!ctrl.classList.contains('hy-ctrl-active')) {
+          ctrl.classList.add('hy-ctrl-active');
+        }
+      } else {
+        if (!hideTimer && ctrl.classList.contains('hy-ctrl-active')) {
+          hideTimer = setTimeout(() => {
+            ctrl.classList.remove('hy-ctrl-active');
+            hideTimer = null;
+          }, 260);
+        }
+      }
+    }
+
+    function onMouseLeave() {
+      const ctrl = document.querySelector('#player-ctrl-wrap');
+      if (ctrl) {
+        ctrl.classList.remove('hy-ctrl-active');
+      }
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+        hideTimer = null;
+      }
+    }
+
+    window.addEventListener('mousemove', onMouseMove, { passive: true });
+    document.addEventListener('mouseleave', onMouseLeave, { passive: true });
+  }
+
+  // =========================================================================
   // 8. 油猴菜单命令与初始化入口 (Menu Commands & Bootstrap)
   // =========================================================================
   function registerMenuCommands() {
@@ -2754,6 +2875,7 @@
       createBadge();
       createModal();
       initSidebarResizer();
+      initPlayerControlAutoHide();
 
       // 在详情页运行优化流程，在列表页运行卡片过滤
       if (isLiveRoom()) {
@@ -2776,6 +2898,7 @@
           checkAndInterceptRoom();
           updateBadge();
           initSidebarResizer();
+          initPlayerControlAutoHide();
         }, delay);
       });
 
@@ -2824,6 +2947,7 @@
       getBadgeEl() { return badgeEl; },
       applySidebarWidth,
       initSidebarResizer,
+      initPlayerControlAutoHide,
       setBadgeUpdater(fn) { updateBadgeQuality = fn; },
       prepareInit() { injectStyles = () => {}; createBadge = () => {}; createModal = () => {}; }
     });
